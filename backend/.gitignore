@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.*
+
+# Testing
+coverage/
+
+# Production and Build
+dist/
+build/
+*.tsbuildinfo
+
+# Sensitive files
+.env
+.env*
+*.pem
+*.key
+*.cert
+firebase.json
+
+# Debug and Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+log.json
+*.log.json
+
+# Misc
+.DS_Store

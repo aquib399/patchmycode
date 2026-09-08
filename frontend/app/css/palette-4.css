@@ -1,0 +1,70 @@
+/* Crimson / Garnet (Tenant Dashboard) */
+
+[data-palette="4"] {
+  --background: #fff9fc;
+  --foreground: #1c0c11;
+  --card: #fff;
+  --card-foreground: #1c0c11;
+  --popover: #fff;
+  --popover-foreground: #1c0c11;
+  --primary: #a80b5d;
+  --primary-foreground: #fff9fc;
+  --secondary: #ffe7ee;
+  --secondary-foreground: #3d0c21;
+  --muted: #fbeef2;
+  --muted-foreground: #6c4a55;
+  --accent: #ffd5db;
+  --accent-foreground: #4b0014;
+  --destructive: #ee0b2a;
+  --border: #e9d0d7;
+  --input: #e9d0d7;
+  --ring: #a80b5d;
+  --chart-1: #ba3a71;
+  --chart-2: #d7686b;
+  --chart-3: #7377c6;
+  --chart-4: #50b584;
+  --chart-5: #903d8b;
+  --radius: 0.625rem;
+  --sidebar: #fff3f8;
+  --sidebar-foreground: #240e16;
+  --sidebar-primary: #a80b5d;
+  --sidebar-primary-foreground: #fff9fc;
+  --sidebar-accent: #ffd5db;
+  --sidebar-accent-foreground: #4b0014;
+  --sidebar-border: #e9d0d7;
+  --sidebar-ring: #a80b5d;
+}
+
+[data-palette="4"].dark {
+  --background: #12080b;
+  --foreground: #fff6f8;
+  --card: #1f0e14;
+  --card-foreground: #fff6f8;
+  --popover: #1f0e14;
+  --popover-foreground: #fff6f8;
+  --primary: #d64c86;
+  --primary-foreground: #18040b;
+  --secondary: #32141f;
+  --secondary-foreground: #fff6f8;
+  --muted: #26151a;
+  --muted-foreground: #c098a4;
+  --accent: #4e1924;
+  --accent-foreground: #ffedf0;
+  --destructive: #ff5e63;
+  --border: #ffffff1f;
+  --input: #ffffff2e;
+  --ring: #d64c86;
+  --chart-1: #d95f8f;
+  --chart-2: #e8777a;
+  --chart-3: #898ee7;
+  --chart-4: #53c48e;
+  --chart-5: #b357ad;
+  --sidebar: #180b0f;
+  --sidebar-foreground: #fff6f8;
+  --sidebar-primary: #d64c86;
+  --sidebar-primary-foreground: #18040b;
+  --sidebar-accent: #4e1924;
+  --sidebar-accent-foreground: #ffedf0;
+  --sidebar-border: #ffffff1f;
+  --sidebar-ring: #d64c86;
+}

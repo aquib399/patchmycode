@@ -1,0 +1,14 @@
+{
+  "name": "patchmycode",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present"
+  }
+}
