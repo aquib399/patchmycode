@@ -7,9 +7,19 @@ declare global {
     role: Role;
     exp: number; // expiry timestamp of the jwt.exp
   }
+  interface RouterParams<B = unknown, Q = unknown, P = unknown> {
+    body?: B;
+    query?: Q;
+    params?: P;
+  }
 
-  type routerFunction<Body = any, Param = any, Query = any> = (
-    req: Request<Param, any, Body, Query>,
+  type routerFunction<T extends RouterParams = RouterParams> = (
+    req: Request<
+      T["params"] extends undefined ? any : T["params"],
+      any,
+      T["body"] extends undefined ? any : T["body"],
+      T["query"] extends undefined ? any : T["query"]
+    >,
     res: Response<ResponseData, AttachedLocals>,
     next?: any
   ) => Promise<Response<ResponseData>>;

@@ -1,6 +1,7 @@
 import { z, ZodError } from "zod";
 
-type SchemaShape = {
+export type ValidateSchema = z.ZodObject<SchemaShape>;
+export type SchemaShape = {
   body?: z.ZodTypeAny;
   query?: z.ZodTypeAny;
   params?: z.ZodTypeAny;
@@ -19,7 +20,7 @@ function replaceObjectContent(
 }
 
 export const validate =
-  (schema: z.ZodObject<SchemaShape>, customMessage?: string): routerFunction =>
+  (schema: ValidateSchema, customMessage?: string): routerFunction =>
   async (req, res, next) => {
     try {
       const parsed = schema.parse({
