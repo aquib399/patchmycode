@@ -37,11 +37,6 @@ app.get("/docs", (_, res) => {
 
 app.use(errorHandler);
 
-app.all("/whatsapp/webhook", (req, res) => {
-  console.log("Webhook received:", req.body, req.query);
-  return res.send(req.query.hub_challenge);
-});
-
 app.use((_, res) => {
   return res.status(404).json({
     error: true,

@@ -1,7 +1,6 @@
 import { Token, TokenType, DeviceType } from "@/models/index.js";
 import { UAParser as uap } from "ua-parser-js";
 import { Role } from "@/types/role.js";
-import { Request } from "express";
 import { Types } from "mongoose";
 
 interface ITokenPayload {
@@ -9,7 +8,7 @@ interface ITokenPayload {
   target: Role;
   type: TokenType;
   token: string;
-  req: Request;
+  req: routerRequest;
 }
 
 export const createOrUpdateToken = async ({

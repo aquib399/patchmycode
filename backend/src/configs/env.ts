@@ -1,5 +1,6 @@
 import { TokenConfigMap } from "@/types/token.js";
 import { calculateMs } from "@/utils/time.js";
+import { Role } from "@/types/role.js";
 import "dotenv/config";
 
 type EnvType = "production" | "development";
@@ -82,8 +83,15 @@ export const EMAIL_CONFIG = {
   APP_PASSWORD: env.GMAIL_APP_PASSWORD!
 };
 
+export const GITHUB_CONFIG = {
+  GITHUB_APP_WEBHOOK_SECRET: env.GITHUB_APP_WEBHOOK_SECRET!,
+  GITHUB_APP_ID: env.GITHUB_APP_ID!,
+  GITHUB_APP_CLIENT_ID: env.GITHUB_APP_CLIENT_ID!,
+  GITHUB_APP_CLIENT_SECRET: env.GITHUB_APP_CLIENT_SECRET!,
+  GITHUB_APP_PRIVATE_KEY: env.GITHUB_APP_PRIVATE_KEY!
+};
+
 import * as envKeys from "./env.js";
-import { Role } from "@/types/role.js";
 
 function getMissingValues(
   obj: Record<string, unknown>,

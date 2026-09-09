@@ -26,9 +26,7 @@ export const useUserVerifyToken = (
   });
 };
 
-export const useUserProfile = (
-  props?: HookProps<typeof UserAPI.profile>
-) => {
+export const useUserProfile = (props?: HookProps<typeof UserAPI.profile>) => {
   return useQuery({
     queryKey: ["user", "profile"],
     queryFn: async () => {
