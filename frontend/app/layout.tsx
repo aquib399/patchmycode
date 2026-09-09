@@ -4,8 +4,8 @@ import PaletteProvider from "@/providers/palette";
 import ThemeProvider from "@/providers/theme";
 import QueryProvider from "@/providers/query";
 import type { Metadata } from "next";
-import "./css/globals.css";
 import { cn } from "@/lib/utils";
+import "./css/globals.css";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -15,8 +15,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Salon",
-  description: "Salong platform."
+  title: "PatchMyCode",
+  description:
+    "Let Ai help you review your PRs and code changes, and suggest improvements."
 };
 
 export default function RootLayout({

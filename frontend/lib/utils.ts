@@ -38,7 +38,7 @@ function redirectToHome(router: AppRouterInstance, defaultPath: string = "/") {
 export const redirectUserToSignin = (router: AppRouterInstance) =>
   redirectToSignin(router, "");
 export const redirectUserToHome = (router: AppRouterInstance) =>
-  redirectToHome(router, "/main");
+  redirectToHome(router, "/app");
 
 type DateTrunc = "dateTime" | "date" | "day" | "hour" | "minute" | "second";
 

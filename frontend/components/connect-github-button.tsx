@@ -11,8 +11,8 @@ export function GithubIcon({
   return (
     <svg
       viewBox="0 0 24 24"
-      width="16"
-      height="16"
+      width="24"
+      height="24"
       fill="currentColor"
       aria-hidden="true"
       className={cn("size-4 shrink-0", className)}
@@ -27,8 +27,9 @@ export function GithubIcon({
   );
 }
 
-export interface ConnectGithubButtonProps
-  extends React.ComponentProps<typeof Button> {
+export interface ConnectGithubButtonProps extends React.ComponentProps<
+  typeof Button
+> {
   label?: string;
   iconPosition?: "left" | "right";
 }
@@ -47,7 +48,7 @@ export function ConnectGithubButton({
     <Button
       type="button"
       variant={variant}
-      className={cn("gap-2", className)}
+      className={cn("w-fit gap-2", className)}
       {...props}
     >
       {iconPosition === "left" && <GithubIcon />}
@@ -56,5 +57,3 @@ export function ConnectGithubButton({
     </Button>
   );
 }
-
-export default ConnectGithubButton;
