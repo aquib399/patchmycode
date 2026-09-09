@@ -38,16 +38,8 @@ interface SendSignupOtpResponse {
 export const sendSignupOtp: serviceFunction<
   validation.SendSignupOtpPayload["body"],
   SendSignupOtpResponse
-> = async ({ email, phone, country }) => {
-  const conditions: Record<string, unknown>[] = [
-    { phone, countryCode: country }
-  ];
-
-  if (email) {
-    conditions.push({ email: email.toLowerCase() });
-  }
-
-  const exists = await User.exists({ $or: conditions });
+> = async ({ email }) => {
+  const exists = await User.exists({ email: email.toLowerCase() });
   if (exists)
     return {
       status: 409,
@@ -68,7 +60,7 @@ export const sendSignupOtp: serviceFunction<
   sendEmail({
     from: `noreply@${APP_DOMAIN}`,
     to: [email],
-    subject: `Verify your email – ${APP_NAME}`,
+    subject: `Verify your email - ${APP_NAME}`,
     html: `<p>Your verification code is <strong>${otpCode}</strong>. It expires in 10 minutes.</p>`
   }).catch((err) =>
     console.error("Failed to send user signup OTP email:", err)

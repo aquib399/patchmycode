@@ -1,14 +1,15 @@
 "use client";
 
-import { signInSchema, SignInPayload } from "@/validations/v1/user/auth";
-import { IS_PRODUCTION } from "@/lib/constant";
-import { Button } from "@/components/ui/button";
-import { getZodErrors } from "@/validations";
-import { useRouter } from "next/navigation";
-import { Field } from "@/components/field";
-import { UserAPI } from "@/api/user";
+import { signInSchema, SignInPayload } from "@/validations/user/auth";
+import { useRouter, useSearchParams } from "next/navigation";
 import { redirectUserToHome } from "@/lib/utils";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { IS_PRODUCTION } from "@/lib/constant";
+import { getZodErrors } from "@/validations";
+import { Field } from "@/components/field";
+import Loading from "@/components/loading";
+import { useState, Suspense } from "react";
+import { UserAPI } from "@/api/user";
 import Link from "next/link";
 
 const DEV_CREDS: { label: string; email: string; password: string }[] = [
@@ -24,7 +25,7 @@ const DEV_CREDS: { label: string; email: string; password: string }[] = [
   }
 ];
 
-export default function UserSignInPage() {
+function SignInForm() {
   const [formData, setFormData] = useState<SignInPayload>({
     email: "",
     password: ""
@@ -32,10 +33,12 @@ export default function UserSignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev: SignInPayload) => ({ ...prev, [name]: value }));
     setErrors((prev) => {
       const next = { ...prev };
       delete next[name];
@@ -53,21 +56,20 @@ export default function UserSignInPage() {
         error: { enabled: true }
       }
     });
-    if (!apiResult.data.error) {
-      redirectUserToHome(router);
-      return;
-    }
     setIsLoading(false);
+    if (apiResult.data.error) return;
+
+    redirectUserToHome(router);
   };
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const result = signInSchema.safeParse(formData);
     if (!result.success) {
       setErrors(getZodErrors(result.error));
       return;
     }
-    await signIn(result.data);
+    signIn(result.data);
   };
 
   const handleQuickSignIn = (email: string, password: string) => {
@@ -75,43 +77,57 @@ export default function UserSignInPage() {
     void signIn({ email, password });
   };
 
+  const signUpHref = redirectParam
+    ? `/sign-up?redirect=${encodeURIComponent(redirectParam)}`
+    : "/sign-up";
+
   return (
     <div className="bg-background flex min-h-[90vh] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <h2 className="text-foreground mt-6 text-center text-3xl font-extrabold">
-          Welcome Back
-        </h2>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+      <div className="border-border bg-card/60 text-card-foreground w-full max-w-md space-y-6 rounded-2xl border p-8 shadow-sm backdrop-blur-sm">
+        <div className="text-center">
+          <h2 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
+            Welcome Back
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Sign in to your account to continue
+          </p>
+        </div>
+
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
           <div className="space-y-4">
             <Field
               id="email"
               name="email"
               type="email"
               label="Email Address"
+              placeholder="you@example.com"
+              autoComplete="email"
               value={formData.email}
               onChange={handleChange}
               error={errors.email}
+              required
             />
             <Field
               id="password"
               name="password"
               type="password"
               label="Password"
+              placeholder="••••••••"
+              autoComplete="current-password"
               value={formData.password}
               onChange={handleChange}
               error={errors.password}
+              required
             />
           </div>
-          <div className="space-y-4">
+
+          <div className="space-y-4 pt-2">
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
             <p className="text-muted-foreground text-center text-sm">
               Don't have an account?{" "}
-              <Link
-                href="/user/sign-up"
-                className="text-primary hover:underline"
-              >
+              <Link href={signUpHref} className="text-primary hover:underline">
                 Sign up here
               </Link>
             </p>
@@ -119,7 +135,7 @@ export default function UserSignInPage() {
         </form>
 
         {!IS_PRODUCTION && (
-          <div className="border-border space-y-2 border-t pt-6">
+          <div className="border-border space-y-2 border-t pt-4">
             <p className="text-muted-foreground text-center text-xs">
               Dev only — Test accounts
             </p>
@@ -141,5 +157,13 @@ export default function UserSignInPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function UserSignInPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <SignInForm />
+    </Suspense>
   );
 }

@@ -1,16 +1,22 @@
 "use client";
 
-import { signUpSchema, SignUpPayload } from "@/validations/v1/user/auth";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 import { MFAType } from "@/types/domain/credential";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getZodErrors } from "@/validations";
-import { useRouter } from "next/navigation";
-import { UserAPI } from "@/api/user";
-import { useState } from "react";
-import Link from "next/link";
 import { Field } from "@/components/field";
+import Loading from "@/components/loading";
+import { UserAPI } from "@/api/user";
+import Link from "next/link";
+import {
+  signUpSchema,
+  SignUpPayload,
+  sendSignupOtpSchema
+} from "@/validations/user/auth";
 
-export default function UserSignUpPage() {
+function SignUpForm() {
   const [formData, setFormData] = useState<SignUpPayload>({
     credentials: { mfaType: MFAType.None, password: "" },
     details: { email: "", name: "", otpRequestId: "", otpCode: "" }
@@ -19,12 +25,23 @@ export default function UserSignUpPage() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otpInput, setOtpInput] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
+
   const handleDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData((prev: SignUpPayload) => ({
       ...prev,
       details: { ...prev.details, [name]: value }
     }));
@@ -33,11 +50,14 @@ export default function UserSignUpPage() {
       delete next[`details.${name}`];
       return next;
     });
-    if (name === "email") setOtpSent(false);
+    if (name === "email") {
+      setOtpSent(false);
+      setResendCooldown(0);
+    }
   };
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "");
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     setOtpInput(value);
     setErrors((prev) => {
       const next = { ...prev };
@@ -48,7 +68,7 @@ export default function UserSignUpPage() {
 
   const handleCredentialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData((prev: SignUpPayload) => ({
       ...prev,
       credentials: { ...prev.credentials, [name]: value }
     }));
@@ -60,42 +80,60 @@ export default function UserSignUpPage() {
   };
 
   const handleSendOtp = async () => {
-    if (!formData.details.email) {
+    const emailToValidate = formData.details.email.trim();
+    const emailResult = sendSignupOtpSchema.safeParse({
+      email: emailToValidate
+    });
+    if (!emailResult.success) {
       setErrors((prev) => ({
         ...prev,
-        "details.email": "Enter your email before requesting an OTP"
+        "details.email": "Please enter a valid email address"
       }));
       return;
     }
+
     setIsSendingOtp(true);
     const result = await UserAPI.auth.signUpSendOtp({
-      payload: { email: formData.details.email },
+      payload: { email: emailToValidate },
       forceReturn: true,
       toastConfig: { success: { enabled: true }, error: { enabled: true } }
     });
     setIsSendingOtp(false);
-    if (!result.data.error && result.data.data?.otpRequestId) {
-      setFormData((prev) => ({
-        ...prev,
-        details: {
-          ...prev.details,
-          otpRequestId: result.data.data!.otpRequestId
-        }
-      }));
-      setOtpSent(true);
-      setOtpInput("");
-    }
+
+    if (result.data.error) return;
+    setFormData((prev: SignUpPayload) => ({
+      ...prev,
+      details: {
+        ...prev.details,
+        email: emailToValidate,
+        otpRequestId: result.data.data!.otpRequestId
+      }
+    }));
+    setOtpSent(true);
+    setResendCooldown(60);
+    setOtpInput("");
   };
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const payload = {
+
+    if (!otpSent) {
+      setErrors((prev) => ({
+        ...prev,
+        "details.email": "Please request and verify your OTP first"
+      }));
+      return;
+    }
+
+    const payload: SignUpPayload = {
       ...formData,
       details: {
         ...formData.details,
-        otpCode: otpInput
+        email: formData.details.email.trim(),
+        otpCode: otpInput.trim()
       }
     };
+
     const result = signUpSchema.safeParse(payload);
     if (!result.success) {
       setErrors(getZodErrors(result.error));
@@ -111,50 +149,91 @@ export default function UserSignUpPage() {
         error: { enabled: true }
       }
     });
-    if (!apiResult.data.error) {
-      router.push("/user/sign-in");
-      return;
-    }
+
     setIsLoading(false);
+    if (apiResult.data.error) return;
   };
 
+  const signInHref = redirectParam
+    ? `/sign-in?redirect=${encodeURIComponent(redirectParam)}`
+    : "/sign-in";
+
   return (
-    <div className="bg-background flex min-h-[90vh] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <h2 className="text-foreground mt-6 text-center text-3xl font-extrabold">
-          Create an Account
-        </h2>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <div className="bg-background flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="border-border bg-card/60 text-card-foreground w-full max-w-md space-y-6 rounded-2xl border p-8 shadow-sm backdrop-blur-sm">
+        <div className="text-center">
+          <h2 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
+            Create an Account
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Join us to start managing your code and projects
+          </p>
+        </div>
+
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
           <div className="space-y-4">
             <Field
               id="name"
               name="name"
               label="Full Name"
+              placeholder="John Doe"
+              autoComplete="name"
               value={formData.details.name}
               onChange={handleDetailsChange}
               error={errors["details.name"]}
+              required
             />
-            <div className="flex items-end gap-2">
-              <Field
-                id="email"
-                name="email"
-                type="email"
-                label="Email Address"
-                value={formData.details.email}
-                onChange={handleDetailsChange}
-                error={errors["details.email"]}
-                wrapperClassName="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSendOtp}
-                size={"lg"}
-                disabled={isSendingOtp || !formData.details.email}
-              >
-                {isSendingOtp ? "Sending…" : otpSent ? "Resend" : "Send OTP"}
-              </Button>
+
+            <div>
+              <div className="flex items-end gap-2">
+                <Field
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email Address"
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  value={formData.details.email}
+                  onChange={handleDetailsChange}
+                  error={errors["details.email"]}
+                  wrapperClassName="flex-1"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSendOtp}
+                  disabled={
+                    isSendingOtp ||
+                    !formData.details.email ||
+                    resendCooldown > 0
+                  }
+                >
+                  {isSendingOtp
+                    ? "Sending…"
+                    : resendCooldown > 0
+                      ? `Resend (${resendCooldown}s)`
+                      : otpSent
+                        ? "Resend OTP"
+                        : "Send OTP"}
+                </Button>
+              </div>
+
+              {otpSent && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="border-green-500/30 text-green-600 dark:text-green-400"
+                  >
+                    OTP sent to email
+                  </Badge>
+                  <span className="text-muted-foreground text-xs">
+                    Code expires in 10 minutes
+                  </span>
+                </div>
+              )}
             </div>
+
             {otpSent && (
               <Field
                 id="otpInput"
@@ -164,8 +243,9 @@ export default function UserSignUpPage() {
                 onChange={handleOtpChange}
                 inputMode="numeric"
                 maxLength={6}
-                placeholder="6-digit code"
+                placeholder="6-digit verification code"
                 error={errors["details.otpCode"]}
+                required
               />
             )}
 
@@ -174,12 +254,16 @@ export default function UserSignUpPage() {
               name="password"
               type="password"
               label="Password"
+              placeholder="Min. 8 characters"
+              autoComplete="new-password"
               value={formData.credentials.password}
               onChange={handleCredentialsChange}
               error={errors["credentials.password"]}
+              required
             />
           </div>
-          <div className="space-y-4">
+
+          <div className="space-y-4 pt-2">
             <Button
               type="submit"
               disabled={isLoading || !otpSent}
@@ -187,18 +271,17 @@ export default function UserSignUpPage() {
             >
               {isLoading ? "Creating account..." : "Sign Up"}
             </Button>
+
             {!otpSent && (
-              <p className="text-muted-foreground text-center text-sm">
-                Enter your email and click "Send OTP" to verify before signing
-                up.
+              <p className="text-muted-foreground text-center text-xs">
+                Enter your email and click "Send OTP" to verify your email
+                before signing up.
               </p>
             )}
+
             <p className="text-muted-foreground text-center text-sm">
               Already have an account?{" "}
-              <Link
-                href="/user/sign-in"
-                className="text-primary hover:underline"
-              >
+              <Link href={signInHref} className="text-primary hover:underline">
                 Sign in here
               </Link>
             </p>
@@ -206,5 +289,13 @@ export default function UserSignUpPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function UserSignUpPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <SignUpForm />
+    </Suspense>
   );
 }

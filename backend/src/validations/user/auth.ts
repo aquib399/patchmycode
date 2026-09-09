@@ -34,13 +34,7 @@ export type SignInPayload = z.infer<typeof signInSchema>;
 export const signIn = validate(signInSchema);
 
 const sendSignupOtpSchema = z.object({
-  body: z
-    .object({
-      email: z.email(),
-      phone: phoneSchema,
-      country: z.string().min(1, "Country code is required")
-    })
-    .strict()
+  body: z.object({ email: z.email() }).strict()
 });
 export type SendSignupOtpPayload = z.infer<typeof sendSignupOtpSchema>;
 export const sendSignupOtp = validate(sendSignupOtpSchema);

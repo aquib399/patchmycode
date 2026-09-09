@@ -2,10 +2,10 @@
 
 import { Modal, ModalContent, ModalTrigger } from "@/components/modal";
 import { motion, AnimatePresence } from "framer-motion";
+import { PaletteSelector } from "../palette-toggle";
 import { Button } from "@/components/ui/button";
 import { ToggleTheme } from "../theme-toggle";
 import { usePathname } from "next/navigation";
-import { PaletteSelector } from "../palette";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";

@@ -1,5 +1,5 @@
 export const userAuthPaths = {
-  "/api/user/v1/auth/signup/send-otp": {
+  "/api/user/auth/signup/send-otp": {
     post: {
       tags: ["user-auth"],
       summary: "Send signup OTP",
@@ -56,7 +56,7 @@ export const userAuthPaths = {
       }
     }
   },
-  "/api/user/v1/auth/signup": {
+  "/api/user/auth/signup": {
     post: {
       tags: ["user-auth"],
       summary: "User Signup",
@@ -156,7 +156,7 @@ export const userAuthPaths = {
       }
     }
   },
-  "/api/user/v1/auth/signin": {
+  "/api/user/auth/signin": {
     post: {
       tags: ["user-auth"],
       summary: "User Signin",
@@ -209,7 +209,7 @@ export const userAuthPaths = {
       }
     }
   },
-  "/api/user/v1/auth/signout": {
+  "/api/user/auth/signout": {
     post: {
       tags: ["user-auth"],
       summary: "User Signout",
