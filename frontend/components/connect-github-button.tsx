@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import React from "react";
+import React, { useState } from "react";
+import { UserAPI } from "@/api/user";
+import { Loader2 } from "lucide-react";
 
 export function GithubIcon({
   className,
@@ -32,28 +34,78 @@ export interface ConnectGithubButtonProps extends React.ComponentProps<
 > {
   label?: string;
   iconPosition?: "left" | "right";
+  action?: "connect" | "signin" | "install";
+  autoRedirect?: boolean;
 }
 
 export function ConnectGithubButton({
   label = "Connect with GitHub",
   iconPosition = "left",
+  action = "connect",
+  autoRedirect = true,
   className,
   variant = "outline",
   children,
+  onClick,
+  disabled,
   ...props
 }: ConnectGithubButtonProps) {
+  const [loading, setLoading] = useState(false);
   const content = children || label;
+
+  const handleClick = async (e: any) => {
+    if (onClick) {
+      onClick(e);
+      if (e?.defaultPrevented) return;
+    }
+
+    if (!autoRedirect) return;
+
+    try {
+      setLoading(true);
+      if (action === "install") {
+        const res = await UserAPI.github.getInstallUrl({
+          forceReturn: true,
+          toastConfig: { error: { enabled: true } }
+        });
+        if (res.data.data?.url) {
+          window.location.href = res.data.data.url;
+          return;
+        }
+      } else {
+        const res = await UserAPI.github.getOAuthUrl({
+          queryParams: { action },
+          forceReturn: true,
+          toastConfig: { error: { enabled: true } }
+        });
+        if (res.data.data?.url) {
+          window.location.href = res.data.data.url;
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to get GitHub URL:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Button
       type="button"
       variant={variant}
       className={cn("w-fit gap-2", className)}
+      onClick={handleClick}
+      disabled={disabled || loading}
       {...props}
     >
-      {iconPosition === "left" && <GithubIcon />}
+      {loading ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        iconPosition === "left" && <GithubIcon />
+      )}
       {content && <span>{content}</span>}
-      {iconPosition === "right" && <GithubIcon />}
+      {!loading && iconPosition === "right" && <GithubIcon />}
     </Button>
   );
 }

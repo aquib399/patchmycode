@@ -8,6 +8,7 @@ import { IS_PRODUCTION } from "@/lib/constant";
 import { getZodErrors } from "@/validations";
 import { Field } from "@/components/field";
 import Loading from "@/components/loading";
+import { ConnectGithubButton } from "@/components/connect-github-button";
 import { useState, Suspense } from "react";
 import { UserAPI } from "@/api/user";
 import Link from "next/link";
@@ -93,7 +94,26 @@ function SignInForm() {
           </p>
         </div>
 
-        <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
+        <div className="mt-6 space-y-4">
+          <ConnectGithubButton
+            action="signin"
+            label="Continue with GitHub"
+            className="w-full justify-center"
+          />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="border-border w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card text-muted-foreground px-2">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <form className="mt-4 space-y-5" onSubmit={handleSubmit} noValidate>
           <div className="space-y-4">
             <Field
               id="email"

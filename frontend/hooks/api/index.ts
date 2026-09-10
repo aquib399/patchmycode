@@ -74,3 +74,6 @@ export const buildApiFunctionProps = <T>(
     }
   } as ApiFunctionProps<InferPayload<T>>;
 };
+
+export * from "./user";
+export * from "./github";

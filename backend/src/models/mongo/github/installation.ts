@@ -18,14 +18,17 @@ export interface IInstallationRepository {
   fullName: string;
   private: boolean;
   isActive: boolean;
+  htmlUrl?: string;
+  description?: string;
 }
 
 export interface IInstallation extends BaseEntity {
   installationId: number;
-  userId: Types.ObjectId;
+  userId?: Types.ObjectId;
   accountLogin: string;
   accountId: number;
   accountType: InstallationAccountType;
+  accountAvatarUrl?: string;
   repositories: IInstallationRepository[];
   status: InstallationStatus;
 }
@@ -38,6 +41,7 @@ export const IInstallationRefProjections: (keyof IInstallation)[] = [
   "accountLogin",
   "accountId",
   "accountType",
+  "accountAvatarUrl",
   "repositories",
   "status",
   "createdAt"
@@ -49,7 +53,9 @@ const InstallationRepositorySchema = new Schema<IInstallationRepository>(
     name: { type: String, required: true },
     fullName: { type: String, required: true },
     private: { type: Boolean, default: false },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    htmlUrl: { type: String },
+    description: { type: String }
   },
   { _id: false }
 );
@@ -81,6 +87,10 @@ const InstallationSchema: Schema<IInstallation> = new Schema(
       enum: ["User", "Organization"],
       required: true
     },
+    accountAvatarUrl: {
+      type: String,
+      required: false
+    },
     repositories: {
       type: [InstallationRepositorySchema],
       default: []
@@ -98,6 +108,9 @@ const InstallationSchema: Schema<IInstallation> = new Schema(
     versionKey: false
   }
 );
+
+InstallationSchema.index({ userId: 1, status: 1 });
+InstallationSchema.index({ "repositories.repoId": 1 });
 
 export const Installation = model<IInstallation>(
   Models.Installation.ref,

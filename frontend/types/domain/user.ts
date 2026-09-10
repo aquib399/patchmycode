@@ -6,10 +6,20 @@ export enum UserStatus {
   Suspended = "suspended"
 }
 
+export interface IUserGithub {
+  id: number;
+  login: string;
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+  connectedAt?: string;
+}
+
 export interface IUser extends BaseEntity {
   name: string;
   email: string;
   status: UserStatus;
+  github?: IUserGithub;
 }
 
 export interface SignInPayload {

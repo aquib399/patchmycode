@@ -7,10 +7,20 @@ export enum UserStatus {
   Suspended = "suspended"
 }
 
+export interface IUserGithub {
+  id: number;
+  login: string;
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+  connectedAt?: Date;
+}
+
 export interface IUser extends BaseEntity {
   name: string;
   email: string;
   status: UserStatus;
+  github?: IUserGithub;
 }
 export type IUserDocument = HydratedDocument<IUser>;
 
@@ -18,6 +28,7 @@ export const IUserRefProjections: (keyof IUser)[] = [
   "name",
   "email",
   "status",
+  "github",
   "createdAt"
 ];
 
@@ -40,6 +51,18 @@ const UserSchema: Schema<IUser> = new Schema(
       default: UserStatus.Active,
       required: true,
       index: true
+    },
+    github: {
+      type: {
+        id: { type: Number, index: true },
+        login: { type: String, required: true },
+        name: { type: String },
+        email: { type: String },
+        avatarUrl: { type: String },
+        connectedAt: { type: Date, default: Date.now }
+      },
+      required: false,
+      _id: false
     }
   },
   {

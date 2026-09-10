@@ -1,5 +1,6 @@
 import { VerifyTokenResponse } from "@/types/domain/token";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import * as githubTypes from "@/types/domain/github";
 import * as userTypes from "@/types/domain/user";
 import { ApiFunctionProps } from "@/types/api";
 import { request } from ".";
@@ -44,5 +45,60 @@ export const UserAPI = {
       method: "GET",
       endpoint: endpoints.profile,
       ...(props || {})
-    })
+    }),
+  github: {
+    getOAuthUrl: (props?: ApiFunctionProps) =>
+      request<{ url: string }>({
+        method: "GET",
+        endpoint: endpoints.github.oauthUrl,
+        ...(props || {})
+      }),
+    disconnect: (props?: ApiFunctionProps) =>
+      request<{ disconnected: boolean }>({
+        method: "DELETE",
+        endpoint: endpoints.github.disconnect,
+        ...(props || {})
+      }),
+    getInstallUrl: (props?: ApiFunctionProps) =>
+      request<{ url: string }>({
+        method: "GET",
+        endpoint: endpoints.github.installUrl,
+        ...(props || {})
+      }),
+    linkInstallation: (
+      props: ApiFunctionProps<githubTypes.LinkInstallationPayload>
+    ) =>
+      request<githubTypes.IInstallation>({
+        method: "POST",
+        endpoint: endpoints.github.linkInstallation,
+        ...props
+      }),
+    getInstallations: (props?: ApiFunctionProps) =>
+      request<githubTypes.IInstallation[]>({
+        method: "GET",
+        endpoint: endpoints.github.installations,
+        ...(props || {})
+      }),
+    getRepositories: (props?: ApiFunctionProps) =>
+      request<githubTypes.RepositoryItem[]>({
+        method: "GET",
+        endpoint: endpoints.github.repositories,
+        ...(props || {})
+      }),
+    syncRepositories: (props?: ApiFunctionProps) =>
+      request<githubTypes.RepositoryItem[]>({
+        method: "POST",
+        endpoint: endpoints.github.sync,
+        ...(props || {})
+      }),
+    toggleRepoStatus: (
+      repoId: number,
+      props: ApiFunctionProps<{ isActive: boolean }>
+    ) =>
+      request<{ repoId: number; isActive: boolean }>({
+        method: "PATCH",
+        endpoint: endpoints.github.toggleRepoStatus(repoId),
+        ...props
+      })
+  }
 };

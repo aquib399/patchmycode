@@ -10,7 +10,8 @@ import parseDiff from "parse-diff";
 import {
   Installation,
   InstallationStatus,
-  InstallationAccountType
+  InstallationAccountType,
+  User
 } from "@/models/index.js";
 
 export interface HandlePullRequestPayload {
@@ -342,16 +343,29 @@ export const handleInstallation: serviceFunction<
       isActive: true
     }));
 
+    const matchingUser = await User.findOne({
+      $or: [
+        { "github.id": (account as any).id },
+        { "github.login": account.login }
+      ]
+    });
+
+    const updateDoc: any = {
+      installationId,
+      accountLogin: account.login,
+      accountId: (account as any).id ?? 0,
+      accountType: account.type as InstallationAccountType,
+      status: InstallationStatus.Active,
+      repositories: formattedRepos
+    };
+
+    if (matchingUser) {
+      updateDoc.userId = matchingUser._id;
+    }
+
     await Installation.findOneAndUpdate(
       { installationId },
-      {
-        installationId,
-        accountLogin: account.login,
-        accountId: (account as any).id ?? 0,
-        accountType: account.type as InstallationAccountType,
-        status: InstallationStatus.Active,
-        repositories: formattedRepos
-      },
+      updateDoc,
       { upsert: true, returnDocument: "after" }
     );
   } else if (action === "deleted") {

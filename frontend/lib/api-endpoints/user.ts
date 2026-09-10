@@ -10,6 +10,17 @@ export const USER_ENDPOINTS = () => {
       signOut: `${auth}/sign-out`,
       verifyToken: `${auth}/verify-token`
     },
-    profile: `${base}/profile`
+    profile: `${base}/profile`,
+    github: {
+      oauthUrl: `${base}/github/oauth-url`,
+      disconnect: `${base}/github/disconnect`,
+      installUrl: `${base}/github/install-url`,
+      linkInstallation: `${base}/github/installations/link`,
+      installations: `${base}/github/installations`,
+      repositories: `${base}/github/repositories`,
+      sync: `${base}/github/sync`,
+      toggleRepoStatus: (repoId: number) =>
+        `${base}/github/repositories/${repoId}/status`
+    }
   };
 };
