@@ -91,6 +91,9 @@ export const GITHUB_CONFIG = {
   GITHUB_APP_PRIVATE_KEY: env.GITHUB_APP_PRIVATE_KEY!
 };
 
+export const AI_CONFIG = {
+  API_KEY: env.GEMINI_API_KEY!
+};
 import * as envKeys from "./env.js";
 
 function getMissingValues(
