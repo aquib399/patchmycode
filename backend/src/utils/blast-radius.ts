@@ -1,10 +1,10 @@
-import { Octokit } from "@octokit/rest";
+import { findSymbolCallers, CallerSnippet } from "./scanner.js";
 import parseDiff from "parse-diff";
 
 export interface BlastRadiusReference {
   symbol: string;
   sourceFile: string;
-  referencingFiles: string[];
+  callers: CallerSnippet[];
 }
 
 const LANGUAGE_PATTERNS: Record<string, RegExp[]> = {
@@ -95,9 +95,7 @@ export function extractModifiedSymbols(
 }
 
 export async function analyzeBlastRadius(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
+  repoDir: string,
   parsedFiles: parseDiff.File[]
 ): Promise<BlastRadiusReference[]> {
   const symbols = extractModifiedSymbols(parsedFiles);
@@ -105,23 +103,20 @@ export async function analyzeBlastRadius(
 
   for (const [symbol, sourceFile] of symbols.entries()) {
     try {
-      const { data } = await octokit.rest.search.code({
-        q: `${symbol} repo:${owner}/${repo}`
-      });
+      const callers = await findSymbolCallers(repoDir, symbol, sourceFile);
 
-      const referencingFiles = data.items
-        .map((item) => item.path)
-        .filter((path) => path !== sourceFile);
-
-      if (referencingFiles.length > 0) {
+      if (callers.length > 0) {
         results.push({
           symbol,
           sourceFile,
-          referencingFiles
+          callers
         });
       }
     } catch (err) {
-      console.warn(`[Blast Radius] Search failed for symbol "${symbol}":`, err);
+      console.warn(
+        `[Blast Radius] Caller search failed for symbol "${symbol}":`,
+        err
+      );
     }
   }
 

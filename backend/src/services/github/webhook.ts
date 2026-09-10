@@ -1,16 +1,17 @@
+import { downloadAndExtractRepo, cleanupRepo } from "@/utils/archive.js";
 import { PRReviewOutput, prReviewResponseSchema } from "@/types/ai.js";
 import { generateStructuredAIResponse } from "@/clients/ai/client.js";
+import { publishReview, setCommitStatus } from "./publisher.js";
+import { analyzeBlastRadius } from "@/utils/blast-radius.js";
 import { getInstallationOctokit } from "@/clients/github.js";
+import { generatePrompt } from "@/clients/ai/prompt.js";
 import { createResponse } from "@/utils/response.js";
+import parseDiff from "parse-diff";
 import {
   Installation,
   InstallationStatus,
   InstallationAccountType
 } from "@/models/index.js";
-import { publishReview, setCommitStatus } from "./publisher.js";
-import parseDiff from "parse-diff";
-import { analyzeBlastRadius } from "@/utils/blast-radius.js";
-import { generatePrompt } from "@/clients/ai/prompt.js";
 
 export interface HandlePullRequestPayload {
   action: "opened" | "synchronize" | "reopened" | "closed" | string;
@@ -92,50 +93,50 @@ export const handlePullRequest: serviceFunction<
     repo,
     sha: headSha,
     state: "pending",
-    description: "Running blast radius analysis & AI review..."
+    description: "Running PR analysis & AI review..."
   });
 
   try {
-    // 1. Fetch raw diff & parse changed files
-    const { data: rawDiff } = (await octokit.rest.pulls.get({
-      owner,
-      repo,
-      pull_number: pullNumber,
-      mediaType: { format: "diff" }
-    })) as unknown as { data: string };
+    let repoDir: string | null = null;
 
-    const parsedDiff = parseDiff(rawDiff);
+    try {
+      const { data: rawDiff } = (await octokit.rest.pulls.get({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        mediaType: { format: "diff" }
+      })) as unknown as { data: string };
 
-    // 2. Blast Radius Analysis: Find downstream consumers of modified symbols
-    const blastRadius = await analyzeBlastRadius(
-      octokit,
-      owner,
-      repo,
-      parsedDiff
-    );
+      const parsedDiff = parseDiff(rawDiff);
+      repoDir = await downloadAndExtractRepo(octokit, owner, repo, headSha);
+      const blastRadius = await analyzeBlastRadius(repoDir, parsedDiff);
 
-    const prompt = generatePrompt({
-      blastRadius,
-      prTitle: props.pull_request.title,
-      prRefBranch: props.pull_request.base.ref,
-      prHeadBranch: props.pull_request.head.ref,
-      diff: rawDiff
-    });
-    // 4. Request structured review from Gemini
-    const review = await generateStructuredAIResponse<PRReviewOutput>({
-      prompt,
-      schema: prReviewResponseSchema
-    });
+      const prompt = generatePrompt({
+        blastRadius,
+        prTitle: props.pull_request.title,
+        prRefBranch: props.pull_request.base.ref,
+        prHeadBranch: props.pull_request.head.ref,
+        diff: rawDiff
+      });
 
-    // 5. Publish review comments and set final commit status
-    await publishReview({
-      octokit,
-      owner,
-      repo,
-      pullNumber,
-      sha: headSha,
-      review
-    });
+      const review = await generateStructuredAIResponse<PRReviewOutput>({
+        prompt,
+        schema: prReviewResponseSchema
+      });
+
+      await publishReview({
+        octokit,
+        owner,
+        repo,
+        pullNumber,
+        sha: headSha,
+        review
+      });
+    } finally {
+      if (repoDir) {
+        await cleanupRepo(repoDir);
+      }
+    }
 
     return {
       status: 200,

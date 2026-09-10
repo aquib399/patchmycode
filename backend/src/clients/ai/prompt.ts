@@ -477,15 +477,16 @@ export function generatePrompt({
   const blastRadiusContext =
     blastRadius
       .map((item) => {
-        const consumers =
-          item.referencingFiles.length > 0
-            ? item.referencingFiles.map((file) => `\`${file}\``).join(", ")
-            : "none";
+        const callerSnippets = item.callers
+          .map(
+            (c) =>
+              `- Caller in \`${c.path}\` (line ${c.line}):\n\`\`\`\n${c.snippet}\n\`\`\``
+          )
+          .join("\n\n");
 
         return [
-          `Symbol: \`${item.symbol}\``,
-          `Defined in: \`${item.sourceFile}\``,
-          `Referenced by: ${consumers}`
+          `### Symbol: \`${item.symbol}\` (defined in \`${item.sourceFile}\`)`,
+          callerSnippets || "No direct call sites found."
         ].join("\n");
       })
       .join("\n\n") || "No downstream references were identified.";
