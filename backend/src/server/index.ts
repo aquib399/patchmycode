@@ -3,6 +3,7 @@ import { errorHandler } from "@/middlewares/error-handler.js";
 import { getDateTime, logger } from "@/middlewares/logger.js";
 import { app, server } from "@/clients/express-http.js";
 import { corsConfig } from "@/middlewares/cors.js";
+import webhookRouter from "./webhook/index.js";
 import { PORT } from "@/configs/env.js";
 import apiRouter from "./api/index.js";
 import express from "express";
@@ -22,6 +23,7 @@ app.get("/", (_, res) => {
 });
 
 app.use("/api", apiRouter);
+app.use("/webhook", webhookRouter);
 
 import { swaggerSpec } from "@/docs/index.js";
 app.get("/docs.json", (_, res) => {

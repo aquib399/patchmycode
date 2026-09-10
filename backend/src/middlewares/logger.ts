@@ -42,7 +42,7 @@ export const dateFormatter = new Intl.DateTimeFormat("en-IN", {
 
 const RESET = "\x1b[0m";
 
-const shouldLogBody = !IS_PRODUCTION;
+const shouldLogBody = true;
 
 export function getDateTime(date: Date) {
   return dateFormatter.format(date);

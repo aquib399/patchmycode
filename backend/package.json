@@ -11,15 +11,20 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@octokit/app": "^16.1.4",
+    "@octokit/rest": "^22.0.1",
+    "@octokit/webhooks-methods": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
+    "inngest": "^4.20.0",
     "jsonwebtoken": "^9.0.3",
     "lru-cache": "^11.5.2",
     "mongoose": "^9.9.1",
     "nodemailer": "^9.0.5",
+    "parse-diff": "^0.12.0",
     "ua-parser-js": "^2.0.10",
     "zod": "^4.4.3"
   },
@@ -32,6 +37,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/qrcode": "^1.5.6",
     "prettier": "^3.9.6",
+    "smee-client": "^5.0.0",
     "tsc-alias": "^1.9.1",
     "tsx": "^4.23.11",
     "typescript": "^7.0.2"

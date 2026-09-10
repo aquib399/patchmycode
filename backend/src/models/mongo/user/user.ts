@@ -31,7 +31,6 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       required: false,
       unique: true,
-      sparse: true,
       lowercase: true,
       trim: true
     },

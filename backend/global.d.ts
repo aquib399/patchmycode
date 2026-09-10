@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { Role } from "@/types/role.ts";
 import { PERMISSIONS } from "@/lib/permissions.ts";
+import { Role } from "@/types/role.ts";
 declare global {
   interface AttachedLocals {
     id: string; // adminId, tenantId, staffId, customerId
