@@ -26,6 +26,7 @@ import {
   GitBranch,
   RefreshCw,
   ShieldCheck,
+  AlertCircle,
   ExternalLink,
   CheckCircle2
 } from "lucide-react";
@@ -47,6 +48,9 @@ function DashboardContent() {
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
   >("all");
+  const [optimisticOverrides, setOptimisticOverrides] = useState<
+    Record<number, boolean>
+  >({});
 
   const user = profileQuery.data;
   const isGithubConnected = Boolean(user?.github?.id);
@@ -100,11 +104,41 @@ function DashboardContent() {
     };
   }, [repositoriesQuery.data]);
 
-  const handleToggleRepo = (repoId: number, currentActive: boolean) => {
-    toggleStatusMutation.mutate({
-      repoId,
-      isActive: !currentActive
+  useEffect(() => {
+    if (!repositoriesQuery.data) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setOptimisticOverrides((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next = { ...prev };
+      let changed = false;
+      for (const repo of repositoriesQuery.data) {
+        if (repo.repoId in next && next[repo.repoId] === repo.isActive) {
+          delete next[repo.repoId];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
     });
+  }, [repositoriesQuery.data]);
+
+  const handleToggleRepo = (repoId: number, currentActive: boolean) => {
+    const nextActive = !currentActive;
+    setOptimisticOverrides((prev) => ({ ...prev, [repoId]: nextActive }));
+
+    toggleStatusMutation.mutate(
+      { repoId, isActive: nextActive },
+      {
+        onError: (err) => {
+          setOptimisticOverrides((prev) => {
+            const { [repoId]: _removed, ...rest } = prev;
+            return rest;
+          });
+          toast.error(
+            err.message || "Couldn't update review status — try again"
+          );
+        }
+      }
+    );
   };
 
   const handleSync = () => {
@@ -125,8 +159,38 @@ function DashboardContent() {
     }
   };
 
+  if (profileQuery.isLoading || installationsQuery.isLoading) {
+    return (
+      <div className="mx-auto flex max-w-7xl items-center justify-center p-6 py-24">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (profileQuery.isError) {
+    return (
+      <div className="mx-auto max-w-7xl p-6">
+        <div className="border-border/80 bg-card/40 flex flex-col items-center gap-3 rounded-3xl border p-12 text-center">
+          <div className="bg-destructive/10 text-destructive flex size-12 items-center justify-center rounded-full">
+            <AlertCircle className="size-6" />
+          </div>
+          <h2 className="text-foreground text-lg font-semibold">
+            Couldn't load your account
+          </h2>
+          <p className="text-muted-foreground max-w-sm text-sm">
+            Something went wrong reaching your profile. Check your connection
+            and try again.
+          </p>
+          <Button size="sm" onClick={() => profileQuery.refetch()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // State 1: User has not connected GitHub yet
-  if (!isGithubConnected && !profileQuery.isLoading) {
+  if (!isGithubConnected) {
     return (
       <div className="mx-auto max-w-7xl space-y-8 p-6">
         <div className="border-border/80 from-card/80 via-card/40 to-background relative overflow-hidden rounded-3xl border bg-linear-to-b p-8 shadow-sm backdrop-blur-sm md:p-12">
@@ -136,12 +200,12 @@ function DashboardContent() {
               <span>AI Code Review Platform</span>
             </div>
             <h1 className="text-foreground text-3xl font-bold tracking-tight md:text-4xl">
-              Connect GitHub to start reviewing your Pull Requests
+              Catch bugs before they reach your main branch
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed">
               Link your GitHub account to install the PatchMyCode GitHub App.
-              Choose which repositories to monitor, analyze pull requests with
-              AI, and catch potential bugs before they merge.
+              Choose which repositories to monitor, get an AI review on every
+              pull request, and merge with more confidence.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-4">
               <ConnectGithubButton
@@ -159,8 +223,8 @@ function DashboardContent() {
                 <span>Automated PR Reviews</span>
               </div>
               <p className="text-muted-foreground text-xs leading-relaxed">
-                Receive instant AI-powered code reviews and suggestions as soon
-                as a pull request is opened.
+                Get an AI-powered review and suggestions the moment a pull
+                request is opened.
               </p>
             </div>
             <div className="space-y-2">
@@ -169,8 +233,8 @@ function DashboardContent() {
                 <span>Blast Radius Detection</span>
               </div>
               <p className="text-muted-foreground text-xs leading-relaxed">
-                Smart dependency mapping to detect unforeseen side effects
-                across your entire codebase.
+                Smart dependency mapping surfaces side effects across your whole
+                codebase, not just the diff.
               </p>
             </div>
             <div className="space-y-2">
@@ -179,8 +243,8 @@ function DashboardContent() {
                 <span>Granular Control</span>
               </div>
               <p className="text-muted-foreground text-xs leading-relaxed">
-                Selectively enable or pause code reviews per repository with a
-                single click.
+                Turn reviews on or off per repository, any time, with a single
+                click.
               </p>
             </div>
           </div>
@@ -191,7 +255,7 @@ function DashboardContent() {
 
   // State 2: GitHub is connected, but no App installation or repositories found
   const hasInstallations = (installationsQuery.data || []).length > 0;
-  if (isGithubConnected && !hasInstallations && !installationsQuery.isLoading) {
+  if (isGithubConnected && !hasInstallations) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-8 p-6">
         {/* Connected Account Chip */}
@@ -247,12 +311,12 @@ function DashboardContent() {
 
           <div className="mx-auto max-w-md space-y-2">
             <h2 className="text-foreground text-2xl font-bold">
-              Install the PatchMyCode GitHub App
+              One step left: install the GitHub App
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              To allow PatchMyCode to analyze pull requests, install our GitHub
-              App on your personal account or organizations. You can select all
-              repositories or only specific ones.
+              Install PatchMyCode on your personal account or organizations,
+              then pick which repositories to review — all of them, or just a
+              few to start.
             </p>
           </div>
 
@@ -270,8 +334,14 @@ function DashboardContent() {
   }
 
   // State 3: Repositories and Installations Active (Full Management Dashboard)
+  const accountCount = installationsQuery.data?.length || 0;
+  const statusLine =
+    stats.active > 0
+      ? `${stats.active} ${stats.active === 1 ? "repository is" : "repositories are"} under active review across ${accountCount} GitHub ${accountCount === 1 ? "account" : "accounts"}`
+      : `Connected to ${accountCount} GitHub ${accountCount === 1 ? "account" : "accounts"} — turn on review for a repository below to get started`;
+
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 p-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-3 md:p-4 lg:p-6">
       {/* Top Header & Account Status */}
       <div className="border-border/80 bg-card/60 flex flex-col justify-between gap-4 rounded-2xl border p-5 backdrop-blur-sm sm:flex-row sm:items-center">
         <div className="flex items-center gap-3.5">
@@ -301,11 +371,7 @@ function DashboardContent() {
                 Connected
               </Badge>
             </div>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              Managing repositories across{" "}
-              {installationsQuery.data?.length || 0} GitHub{" "}
-              {installationsQuery.data?.length === 1 ? "account" : "accounts"}
-            </p>
+            <p className="text-muted-foreground mt-0.5 text-xs">{statusLine}</p>
           </div>
         </div>
 
@@ -340,7 +406,7 @@ function DashboardContent() {
           <button
             type="button"
             onClick={() => setFilterStatus("all")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               filterStatus === "all"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -351,7 +417,7 @@ function DashboardContent() {
           <button
             type="button"
             onClick={() => setFilterStatus("active")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               filterStatus === "active"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -363,7 +429,7 @@ function DashboardContent() {
           <button
             type="button"
             onClick={() => setFilterStatus("inactive")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               filterStatus === "inactive"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -386,8 +452,39 @@ function DashboardContent() {
       {/* Repositories List */}
       <div className="border-border bg-card/40 divide-border divide-y overflow-hidden rounded-2xl border">
         {repositoriesQuery.isLoading ? (
-          <div className="py-16">
-            <Loading />
+          <div className="divide-border divide-y">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex animate-pulse items-center justify-between gap-4 p-4 md:px-6"
+              >
+                <div className="flex-1 space-y-2">
+                  <div className="bg-muted h-4 w-48 rounded" />
+                  <div className="bg-muted/70 h-3 w-72 rounded" />
+                </div>
+                <div className="bg-muted h-6 w-11 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : repositoriesQuery.isError ? (
+          <div className="space-y-3 px-4 py-16 text-center">
+            <div className="bg-destructive/10 text-destructive mx-auto flex size-12 items-center justify-center rounded-full">
+              <AlertCircle className="size-6" />
+            </div>
+            <h3 className="text-foreground text-base font-semibold">
+              Couldn't load your repositories
+            </h3>
+            <p className="text-muted-foreground mx-auto max-w-sm text-xs">
+              Something went wrong fetching your repository list. Try again.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => repositoriesQuery.refetch()}
+              className="mt-2 text-xs"
+            >
+              Retry
+            </Button>
           </div>
         ) : repositories.length === 0 ? (
           <div className="space-y-3 px-4 py-16 text-center">
@@ -395,14 +492,12 @@ function DashboardContent() {
               <GitBranch className="size-6" />
             </div>
             <h3 className="text-foreground text-base font-semibold">
-              {searchTerm
-                ? "No matching repositories"
-                : "No repositories found"}
+              {searchTerm ? "No matches found" : "Nothing to review yet"}
             </h3>
             <p className="text-muted-foreground mx-auto max-w-sm text-xs">
               {searchTerm
-                ? `No repositories found matching "${searchTerm}". Try adjusting your search term.`
-                : "You haven't granted the PatchMyCode GitHub App access to any repositories yet."}
+                ? `No repositories match "${searchTerm}". Try a different name or clear your search.`
+                : "Add a repository and PatchMyCode will start reviewing pull requests as soon as they're opened."}
             </p>
             {searchTerm ? (
               <Button
@@ -424,85 +519,87 @@ function DashboardContent() {
             )}
           </div>
         ) : (
-          repositories.map((repo) => (
-            <div
-              key={`${repo.installationId}-${repo.repoId}`}
-              className="hover:bg-card/80 flex flex-col justify-between gap-4 p-4 transition-colors sm:flex-row sm:items-center md:px-6"
-            >
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <a
-                    href={repo.htmlUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground hover:text-primary flex items-center gap-1.5 truncate text-sm font-semibold transition-colors"
-                  >
-                    <span>{repo.fullName}</span>
-                    <ExternalLink className="text-muted-foreground size-3 shrink-0 opacity-70" />
-                  </a>
-
-                  {repo.private ? (
-                    <Badge
-                      variant="outline"
-                      className="text-muted-foreground gap-1 py-0 text-[10px]"
+          repositories.map((repo) => {
+            const isActive = optimisticOverrides[repo.repoId] ?? repo.isActive;
+            return (
+              <div
+                key={`${repo.installationId}-${repo.repoId}`}
+                className="hover:bg-card/80 flex flex-col justify-between gap-4 p-4 transition-colors sm:flex-row sm:items-center md:px-6"
+              >
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <a
+                      href={repo.htmlUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-foreground hover:text-primary flex items-center gap-1.5 truncate text-sm font-semibold transition-colors"
                     >
-                      <Lock className="size-2.5" />
-                      <span>Private</span>
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="text-muted-foreground gap-1 py-0 text-[10px]"
-                    >
-                      <Globe className="size-2.5" />
-                      <span>Public</span>
-                    </Badge>
-                  )}
+                      <span>{repo.fullName}</span>
+                      <ExternalLink className="text-muted-foreground size-3 shrink-0 opacity-70" />
+                    </a>
 
-                  <Badge variant="secondary" className="py-0 text-[10px]">
-                    @{repo.accountLogin}
-                  </Badge>
+                    {repo.private ? (
+                      <Badge
+                        variant="outline"
+                        className="text-muted-foreground gap-1 py-0 text-[10px]"
+                      >
+                        <Lock className="size-2.5" />
+                        <span>Private</span>
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-muted-foreground gap-1 py-0 text-[10px]"
+                      >
+                        <Globe className="size-2.5" />
+                        <span>Public</span>
+                      </Badge>
+                    )}
 
-                  {repo.isActive ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-600 dark:text-green-400">
-                      <CheckCircle2 className="size-3" />
-                      <span>Review Active</span>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px] font-medium">
-                      <span className="bg-muted-foreground/50 size-2 rounded-full" />
-                      <span>Paused</span>
-                    </span>
+                    <Badge variant="secondary" className="py-0 text-[10px]">
+                      @{repo.accountLogin}
+                    </Badge>
+
+                    {isActive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-600 dark:text-green-400">
+                        <CheckCircle2 className="size-3" />
+                        <span>Review Active</span>
+                      </span>
+                    ) : (
+                      <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium">
+                        <span className="bg-muted-foreground/50 size-1.5 rounded-full" />
+                        <span>Paused</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {repo.description && (
+                    <p className="text-muted-foreground max-w-xl truncate text-xs">
+                      {repo.description}
+                    </p>
                   )}
                 </div>
 
-                {repo.description && (
-                  <p className="text-muted-foreground max-w-xl truncate text-xs">
-                    {repo.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Toggle Switch */}
-              <div className="flex shrink-0 items-center gap-3 self-end sm:self-center">
-                <div className="text-right">
-                  <span className="text-foreground block text-xs font-medium">
-                    PR Review
-                  </span>
-                  <span className="text-muted-foreground block text-[10px]">
-                    {repo.isActive ? "Enabled" : "Disabled"}
-                  </span>
+                {/* Toggle Switch */}
+                <div className="flex shrink-0 items-center gap-3 self-end sm:self-center">
+                  <div className="text-right">
+                    <span className="text-foreground block text-xs font-medium">
+                      PR Review
+                    </span>
+                    <span className="text-muted-foreground block text-[10px]">
+                      {isActive ? "Enabled" : "Disabled"}
+                    </span>
+                  </div>
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={() =>
+                      handleToggleRepo(repo.repoId, isActive)
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={repo.isActive}
-                  onCheckedChange={() =>
-                    handleToggleRepo(repo.repoId, repo.isActive)
-                  }
-                  // disabled={toggleStatusMutation.isPending}
-                />
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
