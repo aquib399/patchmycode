@@ -1,5 +1,5 @@
 import { PRReviewOutput, prReviewResponseSchema } from "@/types/ai.js";
-import { generateStructuredAIResponse } from "@/clients/ai.js";
+import { generateStructuredAIResponse } from "@/clients/ai/client.js";
 import { getInstallationOctokit } from "@/clients/github.js";
 import { createResponse } from "@/utils/response.js";
 import {
@@ -10,6 +10,7 @@ import {
 import { publishReview, setCommitStatus } from "./publisher.js";
 import parseDiff from "parse-diff";
 import { analyzeBlastRadius } from "@/utils/blast-radius.js";
+import { generatePrompt } from "@/clients/ai/prompt.js";
 
 export interface HandlePullRequestPayload {
   action: "opened" | "synchronize" | "reopened" | "closed" | string;
@@ -113,34 +114,15 @@ export const handlePullRequest: serviceFunction<
       parsedDiff
     );
 
-    const blastRadiusContext = blastRadius.length
-      ? blastRadius
-          .map(
-            (item) =>
-              `- Modified symbol \`${item.symbol}\` in \`${item.sourceFile}\` is referenced by: ${item.referencingFiles.map((f) => `\`${f}\``).join(", ")}`
-          )
-          .join("\n")
-      : "No exported symbols were modified, or no downstream references were found.";
-
-    // 3. Construct prompt with deterministic impact graph
-    const prompt = `
-PR Title: ${props.pull_request.title}
-Base Branch: ${props.pull_request.base.ref}
-Head Branch: ${props.pull_request.head.ref}
-
-BLAST RADIUS (Downstream consumers potentially broken by signature or behavioral changes):
-${blastRadiusContext}
-
-PR DIFF:
-\`\`\`diff
-${rawDiff}
-\`\`\`
-`;
-
+    const prompt = generatePrompt({
+      blastRadius,
+      prTitle: props.pull_request.title,
+      prRefBranch: props.pull_request.base.ref,
+      prHeadBranch: props.pull_request.head.ref,
+      diff: rawDiff
+    });
     // 4. Request structured review from Gemini
     const review = await generateStructuredAIResponse<PRReviewOutput>({
-      systemInstruction:
-        "You are an expert staff code reviewer. Analyze the pull request diff and blast radius references. Flag breaking changes, security risks, and logic bugs. Provide inline code suggestions where appropriate.",
       prompt,
       schema: prReviewResponseSchema
     });

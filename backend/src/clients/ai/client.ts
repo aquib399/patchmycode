@@ -1,10 +1,10 @@
 import { GoogleGenAI, Schema } from "@google/genai";
+import { systemInstruction } from "./prompt.js";
 import { AI_CONFIG } from "@/configs/env.js";
 
 const ai = new GoogleGenAI({ apiKey: AI_CONFIG.API_KEY });
 
 export interface GenerateStructuredInput {
-  systemInstruction?: string;
   prompt: string;
   schema?: Schema;
 }
@@ -16,7 +16,7 @@ export async function generateStructuredAIResponse<T>(
     model: "gemini-3.5-flash-lite",
     contents: input.prompt,
     config: {
-      systemInstruction: input.systemInstruction,
+      systemInstruction,
       responseMimeType: "application/json",
       ...(input.schema ? { responseSchema: input.schema } : {})
     }
