@@ -363,11 +363,10 @@ export const handleInstallation: serviceFunction<
       updateDoc.userId = matchingUser._id;
     }
 
-    await Installation.findOneAndUpdate(
-      { installationId },
-      updateDoc,
-      { upsert: true, returnDocument: "after" }
-    );
+    await Installation.findOneAndUpdate({ installationId }, updateDoc, {
+      upsert: true,
+      returnDocument: "after"
+    });
   } else if (action === "deleted") {
     await Installation.findOneAndUpdate(
       { installationId },

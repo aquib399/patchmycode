@@ -9,48 +9,36 @@ export const handleWebhook: routerFunction<any> = async (req, res) => {
     message: "Webhook processed successfully",
     data: {}
   });
+  try {
+    switch (event) {
+      case "pull_request": {
+        service.handlePullRequest(body);
+        break;
+      }
+      case "issue_comment": {
+        service.handleIssueComment(body);
+        break;
+      }
+      case "pull_request_review_comment": {
+        service.handlePullRequestReviewComment(body);
 
-  switch (event) {
-    case "pull_request": {
-      service.handlePullRequest(body).catch((err) => {
-        console.error("[Webhook] Error in handlePullRequest:", err);
-      });
-      break;
+        break;
+      }
+      case "installation": {
+        service.handleInstallation(body);
+        break;
+      }
+      case "installation_repositories": {
+        service.handleInstallationRepositories(body);
+        break;
+      }
+      default: {
+        console.warn(`Unhandled GitHub event: ${event}`);
+        break;
+      }
     }
-    case "issue_comment": {
-      service.handleIssueComment(body).catch((err) => {
-        console.error("[Webhook] Error in handleIssueComment:", err);
-      });
-      break;
-    }
-    case "pull_request_review_comment": {
-      service.handlePullRequestReviewComment(body).catch((err) => {
-        console.error(
-          "[Webhook] Error in handlePullRequestReviewComment:",
-          err
-        );
-      });
-      break;
-    }
-    case "installation": {
-      service.handleInstallation(body).catch((err) => {
-        console.error("[Webhook] Error in handleInstallation:", err);
-      });
-      break;
-    }
-    case "installation_repositories": {
-      service.handleInstallationRepositories(body).catch((err) => {
-        console.error(
-          "[Webhook] Error in handleInstallationRepositories:",
-          err
-        );
-      });
-      break;
-    }
-    default: {
-      console.log(`Unhandled GitHub event: ${event}`);
-      break;
-    }
+  } catch (error) {
+    console.error(`Error processing GitHub webhook: ${error}`);
   }
 
   return {} as any;

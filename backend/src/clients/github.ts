@@ -17,21 +17,22 @@ let cachedAppInfo: { slug: string; name: string; htmlUrl: string } | null =
 
 export async function getAppInfo() {
   if (cachedAppInfo) return cachedAppInfo;
+  const fallbackSlug = process.env.GITHUB_APP_SLUG || "patchmycode";
   try {
     const { data } = await githubApp.octokit.request("GET /app");
-    const appData = data;
+    const appData = data as any;
     cachedAppInfo = {
-      slug: appData?.slug || "",
+      slug: process.env.GITHUB_APP_SLUG || appData?.slug || "patchmycode",
       name: appData?.name || "PatchMyCode",
-      htmlUrl: appData?.html_url || "https://github.com/apps/patchmycode"
+      htmlUrl: appData?.html_url || `https://github.com/apps/${fallbackSlug}`
     };
     return cachedAppInfo;
   } catch (error) {
     console.error("[GitHub App] Failed to fetch app info:", error);
     return {
-      slug: "patchmycode",
+      slug: fallbackSlug,
       name: "PatchMyCode",
-      htmlUrl: "https://github.com/apps/patchmycode"
+      htmlUrl: `https://github.com/apps/${fallbackSlug}`
     };
   }
 }

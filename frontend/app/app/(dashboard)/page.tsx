@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo, Suspense } from "react";
 import { SearchBar } from "@/components/search-bar";
-import { useUserProfile } from "@/hooks/api/user";
 import { useSearchParams } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ import {
   useToggleRepoStatus,
   useSyncRepositories,
   useLinkInstallation,
-  useDisconnectGithub,
   useUserInstallations
 } from "@/hooks/api/github";
 import {
@@ -26,7 +24,6 @@ import {
   GitBranch,
   RefreshCw,
   ShieldCheck,
-  AlertCircle,
   ExternalLink,
   CheckCircle2
 } from "lucide-react";
@@ -37,12 +34,10 @@ import {
 
 function DashboardContent() {
   const searchParams = useSearchParams();
-  const profileQuery = useUserProfile({});
   const installationsQuery = useUserInstallations();
   const toggleStatusMutation = useToggleRepoStatus();
   const syncMutation = useSyncRepositories();
   const linkInstallationMutation = useLinkInstallation();
-  const disconnectMutation = useDisconnectGithub();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<
@@ -52,20 +47,16 @@ function DashboardContent() {
     Record<number, boolean>
   >({});
 
-  const user = profileQuery.data;
-  const isGithubConnected = Boolean(user?.github?.id);
-
-  // Handle post-installation redirect or OAuth callbacks from URL
+  // Handle post-installation redirect from GitHub: ?installation_id=...&setup_action=install
   useEffect(() => {
     const installationId = searchParams.get("installation_id");
-    const githubParam = searchParams.get("github");
     const errorParam = searchParams.get("error");
 
     if (installationId) {
       linkInstallationMutation.mutate(Number(installationId), {
         onSuccess: () => {
           toast.success("GitHub App installed and repositories linked!");
-          profileQuery.refetch();
+          installationsQuery.refetch();
           window.history.replaceState({}, "", window.location.pathname);
         },
         onError: (err) => {
@@ -73,10 +64,6 @@ function DashboardContent() {
           window.history.replaceState({}, "", window.location.pathname);
         }
       });
-    } else if (githubParam === "connected") {
-      toast.success("GitHub account connected successfully!");
-      profileQuery.refetch();
-      window.history.replaceState({}, "", window.location.pathname);
     } else if (errorParam) {
       toast.error(decodeURIComponent(errorParam));
       window.history.replaceState({}, "", window.location.pathname);
@@ -149,17 +136,7 @@ function DashboardContent() {
     });
   };
 
-  const handleDisconnect = () => {
-    if (confirm("Are you sure you want to disconnect your GitHub account?")) {
-      disconnectMutation.mutate(undefined, {
-        onSuccess: () => {
-          toast.success("GitHub account disconnected");
-        }
-      });
-    }
-  };
-
-  if (profileQuery.isLoading || installationsQuery.isLoading) {
+  if (installationsQuery.isLoading) {
     return (
       <div className="mx-auto flex max-w-7xl items-center justify-center p-6 py-24">
         <Loading />
@@ -167,30 +144,11 @@ function DashboardContent() {
     );
   }
 
-  if (profileQuery.isError) {
-    return (
-      <div className="mx-auto max-w-7xl p-6">
-        <div className="border-border/80 bg-card/40 flex flex-col items-center gap-3 rounded-3xl border p-12 text-center">
-          <div className="bg-destructive/10 text-destructive flex size-12 items-center justify-center rounded-full">
-            <AlertCircle className="size-6" />
-          </div>
-          <h2 className="text-foreground text-lg font-semibold">
-            Couldn't load your account
-          </h2>
-          <p className="text-muted-foreground max-w-sm text-sm">
-            Something went wrong reaching your profile. Check your connection
-            and try again.
-          </p>
-          <Button size="sm" onClick={() => profileQuery.refetch()}>
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const installations = installationsQuery.data || [];
+  const hasInstallations = installations.length > 0;
 
-  // State 1: User has not connected GitHub yet
-  if (!isGithubConnected) {
+  // State A: No GitHub App installation yet
+  if (!hasInstallations) {
     return (
       <div className="mx-auto max-w-7xl space-y-8 p-6">
         <div className="border-border/80 from-card/80 via-card/40 to-background relative overflow-hidden rounded-3xl border bg-linear-to-b p-8 shadow-sm backdrop-blur-sm md:p-12">
@@ -200,17 +158,17 @@ function DashboardContent() {
               <span>AI Code Review Platform</span>
             </div>
             <h1 className="text-foreground text-3xl font-bold tracking-tight md:text-4xl">
-              Catch bugs before they reach your main branch
+              Install the PatchMyCode GitHub App
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed">
-              Link your GitHub account to install the PatchMyCode GitHub App.
-              Choose which repositories to monitor, get an AI review on every
-              pull request, and merge with more confidence.
+              Install the PatchMyCode GitHub App on your personal GitHub account
+              or organization. Choose which repositories to monitor, get instant
+              AI-powered pull request reviews, and manage your review settings
+              in one place.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-4">
               <ConnectGithubButton
-                action="connect"
-                label="Connect GitHub Account"
+                variant="default"
                 className="px-6 py-2.5 text-base font-medium shadow-sm"
               />
             </div>
@@ -253,102 +211,23 @@ function DashboardContent() {
     );
   }
 
-  // State 2: GitHub is connected, but no App installation or repositories found
-  const hasInstallations = (installationsQuery.data || []).length > 0;
-  if (isGithubConnected && !hasInstallations) {
-    return (
-      <div className="mx-auto w-full max-w-7xl space-y-8 p-6">
-        {/* Connected Account Chip */}
-        <div className="border-border/80 bg-card/60 flex items-center justify-between rounded-xl border p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            {user?.github?.avatarUrl ? (
-              <img
-                src={user.github.avatarUrl}
-                alt={user.github.login}
-                className="ring-border size-10 rounded-full ring-2"
-              />
-            ) : (
-              <div className="bg-muted flex size-10 items-center justify-center rounded-full">
-                <GithubIcon className="text-foreground size-5" />
-              </div>
-            )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-foreground text-sm font-semibold">
-                  {user?.github?.name || user?.github?.login}
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  @{user?.github?.login}
-                </span>
-                <Badge
-                  variant="outline"
-                  className="border-green-500/30 py-0 text-[10px] text-green-600"
-                >
-                  Connected
-                </Badge>
-              </div>
-              <p className="text-muted-foreground text-xs">
-                GitHub account linked
-              </p>
-            </div>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDisconnect}
-            className="text-muted-foreground hover:text-destructive text-xs"
-          >
-            Disconnect
-          </Button>
-        </div>
-
-        {/* Install GitHub App Hero */}
-        <div className="border-border/80 from-card/80 to-background space-y-6 rounded-3xl border bg-linear-to-b p-8 text-center shadow-sm md:p-12">
-          <div className="bg-primary/10 text-primary mx-auto flex size-16 items-center justify-center rounded-2xl">
-            <GitBranch className="size-8" />
-          </div>
-
-          <div className="mx-auto max-w-md space-y-2">
-            <h2 className="text-foreground text-2xl font-bold">
-              One step left: install the GitHub App
-            </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Install PatchMyCode on your personal account or organizations,
-              then pick which repositories to review — all of them, or just a
-              few to start.
-            </p>
-          </div>
-
-          <div className="flex justify-center pt-2">
-            <ConnectGithubButton
-              action="install"
-              label="Install GitHub App & Select Repositories"
-              variant="default"
-              className="gap-2 px-6 py-2.5 text-base"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // State 3: Repositories and Installations Active (Full Management Dashboard)
-  const accountCount = installationsQuery.data?.length || 0;
+  // State B: GitHub App is installed (>= 1 installation)
+  const primaryInstallation = installations[0];
+  const accountCount = installations.length;
   const statusLine =
     stats.active > 0
       ? `${stats.active} ${stats.active === 1 ? "repository is" : "repositories are"} under active review across ${accountCount} GitHub ${accountCount === 1 ? "account" : "accounts"}`
-      : `Connected to ${accountCount} GitHub ${accountCount === 1 ? "account" : "accounts"} — turn on review for a repository below to get started`;
+      : `Installed on ${accountCount} GitHub ${accountCount === 1 ? "account" : "accounts"} — turn on review for a repository below to get started`;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-3 md:p-4 lg:p-6">
       {/* Top Header & Account Status */}
       <div className="border-border/80 bg-card/60 flex flex-col justify-between gap-4 rounded-2xl border p-5 backdrop-blur-sm sm:flex-row sm:items-center">
         <div className="flex items-center gap-3.5">
-          {user?.github?.avatarUrl ? (
+          {primaryInstallation?.accountAvatarUrl ? (
             <img
-              src={user.github.avatarUrl}
-              alt={user.github.login}
+              src={primaryInstallation.accountAvatarUrl}
+              alt={primaryInstallation.accountLogin}
               className="ring-border size-11 rounded-full ring-2"
             />
           ) : (
@@ -359,16 +238,18 @@ function DashboardContent() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-foreground text-base font-bold">
-                {user?.github?.name || user?.github?.login}
+                @{primaryInstallation?.accountLogin}
+                {accountCount > 1 && (
+                  <span className="text-muted-foreground ml-1 text-xs font-normal">
+                    (+{accountCount - 1} more)
+                  </span>
+                )}
               </h2>
-              <span className="text-muted-foreground text-xs">
-                @{user?.github?.login}
-              </span>
               <Badge
                 variant="outline"
                 className="border-green-500/30 py-0 text-[10px] text-green-600"
               >
-                Connected
+                App Installed
               </Badge>
             </div>
             <p className="text-muted-foreground mt-0.5 text-xs">{statusLine}</p>
@@ -390,8 +271,7 @@ function DashboardContent() {
           </Button>
 
           <ConnectGithubButton
-            action="install"
-            label="Configure Repositories"
+            label="Add Repositories / Configure App"
             variant="default"
             size="sm"
             className="gap-1.5 text-xs"
@@ -452,39 +332,8 @@ function DashboardContent() {
       {/* Repositories List */}
       <div className="border-border bg-card/40 divide-border divide-y overflow-hidden rounded-2xl border">
         {repositoriesQuery.isLoading ? (
-          <div className="divide-border divide-y">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex animate-pulse items-center justify-between gap-4 p-4 md:px-6"
-              >
-                <div className="flex-1 space-y-2">
-                  <div className="bg-muted h-4 w-48 rounded" />
-                  <div className="bg-muted/70 h-3 w-72 rounded" />
-                </div>
-                <div className="bg-muted h-6 w-11 rounded-full" />
-              </div>
-            ))}
-          </div>
-        ) : repositoriesQuery.isError ? (
-          <div className="space-y-3 px-4 py-16 text-center">
-            <div className="bg-destructive/10 text-destructive mx-auto flex size-12 items-center justify-center rounded-full">
-              <AlertCircle className="size-6" />
-            </div>
-            <h3 className="text-foreground text-base font-semibold">
-              Couldn't load your repositories
-            </h3>
-            <p className="text-muted-foreground mx-auto max-w-sm text-xs">
-              Something went wrong fetching your repository list. Try again.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => repositoriesQuery.refetch()}
-              className="mt-2 text-xs"
-            >
-              Retry
-            </Button>
+          <div className="py-16">
+            <Loading />
           </div>
         ) : repositories.length === 0 ? (
           <div className="space-y-3 px-4 py-16 text-center">
@@ -492,12 +341,14 @@ function DashboardContent() {
               <GitBranch className="size-6" />
             </div>
             <h3 className="text-foreground text-base font-semibold">
-              {searchTerm ? "No matches found" : "Nothing to review yet"}
+              {searchTerm
+                ? "No matching repositories"
+                : "No repositories found"}
             </h3>
             <p className="text-muted-foreground mx-auto max-w-sm text-xs">
               {searchTerm
-                ? `No repositories match "${searchTerm}". Try a different name or clear your search.`
-                : "Add a repository and PatchMyCode will start reviewing pull requests as soon as they're opened."}
+                ? `No repositories found matching "${searchTerm}". Try adjusting your search term.`
+                : "You haven't granted the PatchMyCode GitHub App access to any repositories yet."}
             </p>
             {searchTerm ? (
               <Button
@@ -510,7 +361,6 @@ function DashboardContent() {
               </Button>
             ) : (
               <ConnectGithubButton
-                action="install"
                 label="Add Repositories"
                 variant="default"
                 size="sm"
@@ -520,7 +370,11 @@ function DashboardContent() {
           </div>
         ) : (
           repositories.map((repo) => {
-            const isActive = optimisticOverrides[repo.repoId] ?? repo.isActive;
+            const effectiveActive =
+              repo.repoId in optimisticOverrides
+                ? optimisticOverrides[repo.repoId]
+                : repo.isActive;
+
             return (
               <div
                 key={`${repo.installationId}-${repo.repoId}`}
@@ -560,14 +414,14 @@ function DashboardContent() {
                       @{repo.accountLogin}
                     </Badge>
 
-                    {isActive ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-600 dark:text-green-400">
+                    {effectiveActive ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-600 dark:text-green-400">
                         <CheckCircle2 className="size-3" />
                         <span>Review Active</span>
                       </span>
                     ) : (
-                      <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium">
-                        <span className="bg-muted-foreground/50 size-1.5 rounded-full" />
+                      <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px] font-medium">
+                        <span className="bg-muted-foreground/50 size-2 rounded-full" />
                         <span>Paused</span>
                       </span>
                     )}
@@ -587,14 +441,15 @@ function DashboardContent() {
                       PR Review
                     </span>
                     <span className="text-muted-foreground block text-[10px]">
-                      {isActive ? "Enabled" : "Disabled"}
+                      {effectiveActive ? "Enabled" : "Disabled"}
                     </span>
                   </div>
                   <Switch
-                    checked={isActive}
+                    checked={effectiveActive}
                     onCheckedChange={() =>
-                      handleToggleRepo(repo.repoId, isActive)
+                      handleToggleRepo(repo.repoId, effectiveActive)
                     }
+                    disabled={toggleStatusMutation.isPending}
                   />
                 </div>
               </div>

@@ -34,14 +34,12 @@ export interface ConnectGithubButtonProps extends React.ComponentProps<
 > {
   label?: string;
   iconPosition?: "left" | "right";
-  action?: "connect" | "signin" | "install";
   autoRedirect?: boolean;
 }
 
 export function ConnectGithubButton({
-  label = "Connect with GitHub",
+  label = "Install GitHub App",
   iconPosition = "left",
-  action = "connect",
   autoRedirect = true,
   className,
   variant = "outline",
@@ -63,28 +61,16 @@ export function ConnectGithubButton({
 
     try {
       setLoading(true);
-      if (action === "install") {
-        const res = await UserAPI.github.getInstallUrl({
-          forceReturn: true,
-          toastConfig: { error: { enabled: true } }
-        });
-        if (res.data.data?.url) {
-          window.location.href = res.data.data.url;
-          return;
-        }
-      } else {
-        const res = await UserAPI.github.getOAuthUrl({
-          queryParams: { action },
-          forceReturn: true,
-          toastConfig: { error: { enabled: true } }
-        });
-        if (res.data.data?.url) {
-          window.location.href = res.data.data.url;
-          return;
-        }
+      const res = await UserAPI.github.getInstallUrl({
+        forceReturn: true,
+        toastConfig: { error: { enabled: true } }
+      });
+      if (res.data.data?.url) {
+        window.location.href = res.data.data.url;
+        return;
       }
     } catch (err) {
-      console.error("Failed to get GitHub URL:", err);
+      console.error("Failed to get GitHub App install URL:", err);
     } finally {
       setLoading(false);
     }
