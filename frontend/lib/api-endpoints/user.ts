@@ -20,7 +20,13 @@ export const USER_ENDPOINTS = () => {
       repositories: `${base}/github/repositories`,
       sync: `${base}/github/sync`,
       toggleRepoStatus: (repoId: number) =>
-        `${base}/github/repositories/${repoId}/status`
+        `${base}/github/repositories/${repoId}/status`,
+      repositoryDetails: (repoId: number) =>
+        `${base}/github/repositories/${repoId}`,
+      updateRepoBranches: (repoId: number) =>
+        `${base}/github/repositories/${repoId}/branches`,
+      fixIssue: (repoId: number) =>
+        `${base}/github/repositories/${repoId}/fix`
     }
   };
 };

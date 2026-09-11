@@ -119,3 +119,51 @@ export const toggleRepositoryStatus: routerFunction<
   });
   return res.status(status).json(response);
 };
+
+export const getRepositoryDetails: routerFunction<
+  validation.GetRepoDetailsPayload
+> = async (req, res) => {
+  const userId = res.locals.id;
+  const repoId = Number(req.params.repoId);
+  const { response, status } = await service.getRepositoryDetails({
+    userId,
+    repoId
+  });
+  return res.status(status).json(response);
+};
+
+export const updateRepositoryBranches: routerFunction<
+  validation.UpdateRepoBranchesPayload
+> = async (req, res) => {
+  const userId = res.locals.id;
+  const repoId = Number(req.params.repoId);
+  const targetBranches = req.body.targetBranches;
+
+  const { response, status } = await service.updateRepositoryBranches({
+    userId,
+    repoId,
+    targetBranches
+  });
+  return res.status(status).json(response);
+};
+
+export const fixRepositoryIssue: routerFunction<
+  validation.FixRepoIssuePayload
+> = async (req, res) => {
+  const userId = res.locals.id;
+  const repoId = Number(req.params.repoId);
+  const { pullNumber, path, suggestion, targetLine, startLine, commentId } =
+    req.body;
+
+  const { response, status } = await service.fixRepositoryIssue({
+    userId,
+    repoId,
+    pullNumber,
+    path,
+    suggestion,
+    targetLine,
+    startLine,
+    commentId
+  });
+  return res.status(status).json(response);
+};

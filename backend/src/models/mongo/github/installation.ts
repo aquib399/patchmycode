@@ -20,6 +20,8 @@ export interface IInstallationRepository {
   isActive: boolean;
   htmlUrl?: string;
   description?: string;
+  defaultBranch?: string;
+  targetBranches?: string[];
 }
 
 export interface IInstallation extends BaseEntity {
@@ -55,7 +57,9 @@ const InstallationRepositorySchema = new Schema<IInstallationRepository>(
     private: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     htmlUrl: { type: String },
-    description: { type: String }
+    description: { type: String },
+    defaultBranch: { type: String },
+    targetBranches: { type: [String], default: [] }
   },
   { _id: false }
 );

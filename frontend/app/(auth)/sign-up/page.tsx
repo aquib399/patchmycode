@@ -4,12 +4,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { MFAType } from "@/types/domain/credential";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { getZodErrors } from "@/validations";
 import { Field } from "@/components/field";
 import Loading from "@/components/loading";
 import { UserAPI } from "@/api/user";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { ArrowRight } from "lucide-react";
 import {
   signUpSchema,
   SignUpPayload,
@@ -175,135 +177,199 @@ function SignUpForm() {
     : "/sign-in";
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="border-border bg-card/60 text-card-foreground w-full max-w-md space-y-6 rounded-2xl border p-8 shadow-sm backdrop-blur-sm">
-        <div className="text-center">
-          <h2 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
-            Create an Account
-          </h2>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Join us to start managing your code and projects
-          </p>
-        </div>
+    <div className="bg-background text-foreground flex min-h-screen flex-col">
+      <SiteHeader />
 
-        <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
-          <div className="space-y-4">
-            <Field
-              id="name"
-              name="name"
-              label="Full Name"
-              placeholder="John Doe"
-              autoComplete="name"
-              value={formData.details.name}
-              onChange={handleDetailsChange}
-              error={errors["details.name"]}
-              required
-            />
-
+      <main className="flex-1">
+        <section className="border-border mx-auto grid max-w-7xl border-b lg:grid-cols-[1.1fr_1fr]">
+          {/* Left Column: Editorial Info */}
+          <div className="border-border flex flex-col justify-between border-b p-6 sm:p-10 lg:border-r lg:border-b-0 lg:p-16">
             <div>
-              <div className="flex items-end gap-2">
-                <Field
-                  id="email"
-                  name="email"
-                  type="email"
-                  label="Email Address"
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  value={formData.details.email}
-                  onChange={handleDetailsChange}
-                  error={errors["details.email"]}
-                  wrapperClassName="flex-1"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSendOtp}
-                  disabled={
-                    isSendingOtp ||
-                    !formData.details.email ||
-                    resendCooldown > 0
-                  }
-                >
-                  {isSendingOtp
-                    ? "Sending…"
-                    : resendCooldown > 0
-                      ? `Resend (${resendCooldown}s)`
-                      : otpSent
-                        ? "Resend OTP"
-                        : "Send OTP"}
-                </Button>
+              <div className="text-muted-foreground mb-8 flex items-center gap-3 font-mono text-xs">
+                <span className="bg-border h-px w-8" />
+                01 REGISTRATION
               </div>
 
-              {otpSent && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="border-green-500/30 text-green-600 dark:text-green-400"
-                  >
-                    OTP sent to email
-                  </Badge>
-                  <span className="text-muted-foreground text-xs">
-                    Code expires in 10 minutes
-                  </span>
-                </div>
-              )}
+              <h1 className="text-4xl leading-tight font-medium tracking-[-0.03em] sm:text-5xl lg:text-6xl">
+                Get started with
+                <br />
+                <span className="text-muted-foreground">
+                  PatchMyCode today.
+                </span>
+              </h1>
+
+              <p className="text-muted-foreground mt-6 max-w-md text-sm leading-relaxed sm:text-base">
+                Create an account to install the GitHub App, connect
+                repositories, and activate automated AI pull-request reviews.
+              </p>
             </div>
 
-            {otpSent && (
-              <Field
-                id="otpInput"
-                name="otpInput"
-                label="Verification Code"
-                value={otpInput}
-                onChange={handleOtpChange}
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="6-digit verification code"
-                error={errors["details.otpCode"]}
-                required
-              />
-            )}
-
-            <Field
-              id="password"
-              name="password"
-              type="password"
-              label="Password"
-              placeholder="Min. 8 characters"
-              autoComplete="new-password"
-              value={formData.credentials.password}
-              onChange={handleCredentialsChange}
-              error={errors["credentials.password"]}
-              required
-            />
+            {/* Feature preview */}
+            <div className="border-border bg-muted/20 mt-12 overflow-hidden border lg:mt-20">
+              <div className="border-border flex h-10 items-center justify-between border-b px-4">
+                <span className="text-muted-foreground font-mono text-xs">
+                  setup/pr-review.ts
+                </span>
+                <span className="text-muted-foreground font-mono text-[11px]">
+                  +3 −0
+                </span>
+              </div>
+              <div className="text-muted-foreground p-4 font-mono text-xs leading-6">
+                <div>export const reviewPolicy = &#123;</div>
+                <div className="bg-success/10 text-success pl-2">
+                  + blastRadius: true,
+                </div>
+                <div className="bg-success/10 text-success pl-2">
+                  + autoFixSuggestions: true,
+                </div>
+                <div className="bg-success/10 text-success pl-2">
+                  + loopPrevention: true
+                </div>
+                <div>&#125;;</div>
+              </div>
+              <div className="border-border text-muted-foreground flex justify-between border-t px-4 py-2.5 font-mono text-[11px]">
+                <span>policy: active</span>
+                <span>all checks pass</span>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4 pt-2">
-            <Button
-              type="submit"
-              disabled={isLoading || !otpSent}
-              className="w-full"
-            >
-              {isLoading ? "Creating account..." : "Sign Up"}
-            </Button>
+          {/* Right Column: Sign Up Form */}
+          <div className="flex items-center justify-center p-6 sm:p-10 lg:p-16">
+            <div className="border-border bg-muted/10 w-full max-w-md border p-6 sm:p-8">
+              <div className="border-border mb-6 flex items-center justify-between border-b pb-4">
+                <span className="font-mono text-xs font-medium tracking-wider uppercase">
+                  Create Account
+                </span>
+                <span className="text-muted-foreground font-mono text-[11px]">
+                  /api/auth/sign-up
+                </span>
+              </div>
 
-            {!otpSent && (
-              <p className="text-muted-foreground text-center text-xs">
-                Enter your email and click "Send OTP" to verify your email
-                before signing up.
-              </p>
-            )}
+              <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+                <Field
+                  id="name"
+                  name="name"
+                  label="Full Name"
+                  placeholder="John Doe"
+                  autoComplete="name"
+                  value={formData.details.name}
+                  onChange={handleDetailsChange}
+                  error={errors["details.name"]}
+                  required
+                />
 
-            <p className="text-muted-foreground text-center text-sm">
-              Already have an account?{" "}
-              <Link href={signInHref} className="text-primary hover:underline">
-                Sign in here
-              </Link>
-            </p>
+                <div>
+                  <div className="flex items-end gap-2">
+                    <Field
+                      id="email"
+                      name="email"
+                      type="email"
+                      label="Email Address"
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      value={formData.details.email}
+                      onChange={handleDetailsChange}
+                      error={errors["details.email"]}
+                      wrapperClassName="flex-1"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleSendOtp}
+                      className="font-mono text-xs"
+                      disabled={
+                        isSendingOtp ||
+                        !formData.details.email ||
+                        resendCooldown > 0
+                      }
+                    >
+                      {isSendingOtp
+                        ? "Sending…"
+                        : resendCooldown > 0
+                          ? `Resend (${resendCooldown}s)`
+                          : otpSent
+                            ? "Resend"
+                            : "Send OTP"}
+                    </Button>
+                  </div>
+
+                  {otpSent && (
+                    <div className="mt-2.5 flex items-center justify-between font-mono text-[11px]">
+                      <span className="text-success">
+                        ● OTP dispatched to email
+                      </span>
+                      <span className="text-muted-foreground">
+                        Expires in 10m
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {otpSent && (
+                  <Field
+                    id="otpInput"
+                    name="otpInput"
+                    label="Verification Code"
+                    value={otpInput}
+                    onChange={handleOtpChange}
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="6-digit code"
+                    error={errors["details.otpCode"]}
+                    required
+                  />
+                )}
+
+                <Field
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="Password"
+                  placeholder="Min. 8 characters"
+                  autoComplete="new-password"
+                  value={formData.credentials.password}
+                  onChange={handleCredentialsChange}
+                  error={errors["credentials.password"]}
+                  required
+                />
+
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !otpSent}
+                    className="w-full gap-2 font-mono text-xs"
+                  >
+                    {isLoading ? "Creating account..." : "Sign Up"}
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+
+                  {!otpSent && (
+                    <p className="text-muted-foreground mt-2 text-center font-mono text-[11px]">
+                      Send OTP to verify email before submitting
+                    </p>
+                  )}
+                </div>
+              </form>
+
+              <div className="border-border mt-6 flex items-center justify-between border-t pt-4 text-xs">
+                <span className="text-muted-foreground">
+                  Already have an account?
+                </span>
+                <Link
+                  href={signInHref}
+                  className="text-foreground flex items-center gap-1 font-medium hover:underline"
+                >
+                  Sign in here <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </div>
           </div>
-        </form>
-      </div>
+        </section>
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }

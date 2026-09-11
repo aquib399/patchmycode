@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import React, { useState } from "react";
 import { UserAPI } from "@/api/user";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
 
 export function GithubIcon({
   className,
@@ -35,16 +35,20 @@ export interface ConnectGithubButtonProps extends React.ComponentProps<
   label?: string;
   iconPosition?: "left" | "right";
   autoRedirect?: boolean;
+  showArrow?: boolean;
+  oAuthType?: "install" | "configure";
 }
 
 export function ConnectGithubButton({
   label = "Install GitHub App",
   iconPosition = "left",
   autoRedirect = true,
+  showArrow = false,
   className,
-  variant = "outline",
+  variant = "default",
   children,
   onClick,
+  oAuthType = "install",
   disabled,
   ...props
 }: ConnectGithubButtonProps) {
@@ -66,7 +70,11 @@ export function ConnectGithubButton({
         toastConfig: { error: { enabled: true } }
       });
       if (res.data.data?.url) {
-        window.location.href = res.data.data.url;
+        if (oAuthType == "configure") {
+          window.open(res.data.data.url, "_blank");
+        } else {
+          window.location.href = res.data.data.url;
+        }
         return;
       }
     } catch (err) {
@@ -80,18 +88,26 @@ export function ConnectGithubButton({
     <Button
       type="button"
       variant={variant}
-      className={cn("w-fit gap-2", className)}
+      className={cn(
+        "group/gh w-fit gap-2 font-mono text-xs tracking-tight",
+        className
+      )}
       onClick={handleClick}
       disabled={disabled || loading}
       {...props}
     >
       {loading ? (
-        <Loader2 className="size-4 animate-spin" />
+        <Loader2 className="size-3.5 animate-spin" />
       ) : (
-        iconPosition === "left" && <GithubIcon />
+        iconPosition === "left" && <GithubIcon className="size-3.5" />
       )}
       {content && <span>{content}</span>}
-      {!loading && iconPosition === "right" && <GithubIcon />}
+      {!loading && iconPosition === "right" && (
+        <GithubIcon className="size-3.5" />
+      )}
+      {showArrow && !loading && (
+        <ArrowRight className="size-3.5 transition-transform group-hover/gh:translate-x-0.5" />
+      )}
     </Button>
   );
 }

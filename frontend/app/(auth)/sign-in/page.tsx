@@ -11,15 +11,18 @@ import Loading from "@/components/loading";
 import { useState, Suspense } from "react";
 import { UserAPI } from "@/api/user";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { ArrowRight } from "lucide-react";
 
 const DEV_CREDS: { label: string; email: string; password: string }[] = [
   {
-    label: "First User",
+    label: "User A",
     email: "aquibalam399@gmail.com",
     password: "1234567890"
   },
   {
-    label: "Second User",
+    label: "User B",
     email: "aquibalamk99@gmail.com",
     password: "1234567890"
   }
@@ -82,80 +85,144 @@ function SignInForm() {
     : "/sign-up";
 
   return (
-    <div className="bg-background flex min-h-[90vh] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="border-border bg-card/60 text-card-foreground w-full max-w-md space-y-6 rounded-2xl border p-8 shadow-sm backdrop-blur-sm">
-        <div className="text-center">
-          <h2 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
-            Welcome Back
-          </h2>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Sign in to your account to continue
-          </p>
-        </div>
+    <div className="bg-background text-foreground flex min-h-screen flex-col">
+      <SiteHeader />
 
-        <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
-          <div className="space-y-4">
-            <Field
-              id="email"
-              name="email"
-              type="email"
-              label="Email Address"
-              placeholder="you@example.com"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={errors.email}
-              required
-            />
-            <Field
-              id="password"
-              name="password"
-              type="password"
-              label="Password"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-              required
-            />
-          </div>
+      <main className="flex-1">
+        <section className="border-border mx-auto grid max-w-7xl border-b lg:grid-cols-[1.1fr_1fr]">
+          {/* Left Column: Editorial Info */}
+          <div className="border-border flex flex-col justify-between border-b p-6 sm:p-10 lg:border-r lg:border-b-0 lg:p-16">
+            <div>
+              <div className="text-muted-foreground mb-8 flex items-center gap-3 font-mono text-xs">
+                <span className="bg-border h-px w-8" />
+                01 AUTHENTICATION
+              </div>
 
-          <div className="space-y-4 pt-2">
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-            <p className="text-muted-foreground text-center text-sm">
-              Don't have an account?{" "}
-              <Link href={signUpHref} className="text-primary hover:underline">
-                Sign up here
-              </Link>
-            </p>
-          </div>
-        </form>
+              <h1 className="text-4xl leading-tight font-medium tracking-[-0.03em] sm:text-5xl lg:text-6xl">
+                Sign in to your
+                <br />
+                <span className="text-muted-foreground">
+                  PatchMyCode workspace.
+                </span>
+              </h1>
 
-        {!IS_PRODUCTION && (
-          <div className="border-border space-y-2 border-t pt-4">
-            <p className="text-muted-foreground text-center text-xs">
-              Dev only — Test accounts
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {DEV_CREDS.map((t) => (
-                <Button
-                  key={t.email}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isLoading}
-                  onClick={() => handleQuickSignIn(t.email, t.password)}
-                >
-                  {t.label}
-                </Button>
-              ))}
+              <p className="text-muted-foreground mt-6 max-w-md text-sm leading-relaxed sm:text-base">
+                Manage your connected GitHub repositories, configure automated
+                PR code reviews, and track dependency blast radius.
+              </p>
+            </div>
+
+            {/* Diff Preview Card */}
+            <div className="border-border bg-muted/20 mt-12 overflow-hidden border lg:mt-20">
+              <div className="border-border flex h-10 items-center justify-between border-b px-4">
+                <span className="text-muted-foreground font-mono text-xs">
+                  auth/session.ts
+                </span>
+                <span className="text-muted-foreground font-mono text-[11px]">
+                  +1 −1
+                </span>
+              </div>
+              <div className="text-muted-foreground p-4 font-mono text-xs leading-6">
+                <div>async function verifySession() &#123;</div>
+                <div className="bg-success/10 text-success pl-2">
+                  + await validateToken(token);
+                </div>
+                <div>&#125;</div>
+              </div>
+              <div className="border-border text-muted-foreground flex justify-between border-t px-4 py-2.5 font-mono text-[11px]">
+                <span>status: ready</span>
+                <span>session-guard: active</span>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Right Column: Sign In Form */}
+          <div className="flex items-center justify-center p-6 sm:p-10 lg:p-16">
+            <div className="border-border bg-muted/10 w-full max-w-md border p-6 sm:p-8">
+              <div className="border-border mb-6 flex items-center justify-between border-b pb-4">
+                <span className="font-mono text-xs font-medium tracking-wider uppercase">
+                  Sign In
+                </span>
+                <span className="text-muted-foreground font-mono text-[11px]">
+                  /api/auth/sign-in
+                </span>
+              </div>
+
+              <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+                <Field
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email Address"
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  error={errors.email}
+                  required
+                />
+
+                <Field
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="Password"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  error={errors.password}
+                  required
+                />
+
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full gap-2 font-mono text-xs"
+                  >
+                    {isLoading ? "Authenticating..." : "Sign In"}
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+                </div>
+              </form>
+
+              <div className="border-border mt-6 flex items-center justify-between border-t pt-4 text-xs">
+                <span className="text-muted-foreground">No account yet?</span>
+                <Link
+                  href={signUpHref}
+                  className="text-foreground flex items-center gap-1 font-medium hover:underline"
+                >
+                  Create an account <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+
+              {!IS_PRODUCTION && (
+                <div className="border-border mt-6 border-t pt-4">
+                  <p className="text-muted-foreground mb-2 font-mono text-[11px] tracking-wider uppercase">
+                    Dev Test Credentials
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {DEV_CREDS.map((t) => (
+                      <button
+                        key={t.email}
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => handleQuickSignIn(t.email, t.password)}
+                        className="border-border hover:bg-muted text-muted-foreground hover:text-foreground border px-2.5 py-1 font-mono text-[11px] transition-colors"
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }

@@ -499,7 +499,7 @@ export function generatePrompt({
     blastRadius.map((node) => formatNode(node, true)).join("\n\n---\n\n") ||
     "No downstream references were identified.";
 
-  return `
+  const prompt = `
 # Pull Request Review
 
 ## Pull Request
@@ -575,4 +575,5 @@ Before providing a suggestion, verify that:
 ${diff}
 \`\`\`
 `;
+  return prompt;
 }

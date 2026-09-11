@@ -63,6 +63,7 @@ ${fileSummaryList || "_No file summaries provided._"}
     let commentBody = `**[${issue.severity}]** ${issue.comment}`;
     if (issue.suggestion) {
       commentBody += `\n\n\`\`\`suggestion\n${issue.suggestion}\n\`\`\``;
+      commentBody += `\n\n---\n💡 *Click **Commit suggestion** above or reply \`/fix\` to this comment to auto-commit this change.*`;
     }
 
     return {

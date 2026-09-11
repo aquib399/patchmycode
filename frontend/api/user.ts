@@ -99,6 +99,30 @@ export const UserAPI = {
         method: "PATCH",
         endpoint: endpoints.github.toggleRepoStatus(repoId),
         ...props
+      }),
+    getRepositoryDetails: (repoId: number, props?: ApiFunctionProps) =>
+      request<githubTypes.RepositoryDetailView>({
+        method: "GET",
+        endpoint: endpoints.github.repositoryDetails(repoId),
+        ...(props || {})
+      }),
+    updateRepoBranches: (
+      repoId: number,
+      props: ApiFunctionProps<githubTypes.UpdateRepoBranchesPayload>
+    ) =>
+      request<{ repoId: number; targetBranches: string[] }>({
+        method: "PATCH",
+        endpoint: endpoints.github.updateRepoBranches(repoId),
+        ...props
+      }),
+    fixIssue: (
+      repoId: number,
+      props: ApiFunctionProps<githubTypes.FixIssuePayload>
+    ) =>
+      request<{ success: boolean; commitSha: string; commitUrl: string }>({
+        method: "POST",
+        endpoint: endpoints.github.fixIssue(repoId),
+        ...props
       })
   }
 };

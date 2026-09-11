@@ -1,9 +1,10 @@
 import { downloadAndExtractRepo, cleanupRepo } from "@/utils/archive.js";
+import { getInstallationOctokit, getAppInfo } from "@/clients/github.js";
 import { PRReviewOutput, prReviewResponseSchema } from "@/types/ai.js";
+import { resolveCommentFix, resolvePullRequestFixes } from "./fix.js";
 import { generateStructuredAIResponse } from "@/clients/ai/client.js";
 import { publishReview, setCommitStatus } from "./publisher.js";
 import { analyzeBlastRadius } from "@/utils/blast-radius.js";
-import { getInstallationOctokit } from "@/clients/github.js";
 import { generatePrompt } from "@/clients/ai/prompt.js";
 import { createResponse } from "@/utils/response.js";
 import parseDiff from "parse-diff";
@@ -39,6 +40,11 @@ export interface HandlePullRequestPayload {
   };
   installation?: {
     id: number;
+  };
+  sender?: {
+    login: string;
+    type: string;
+    id?: number;
   };
 }
 
@@ -82,12 +88,122 @@ export const handlePullRequest: serviceFunction<
     };
   }
 
+  // 1. Verify installation and repository review enablement
+  const installation = await Installation.findOne({
+    installationId,
+    status: InstallationStatus.Active
+  });
+
+  if (!installation) {
+    return {
+      status: 200,
+      response: await createResponse<HandlePullRequestResponse>(
+        "success",
+        "Installation not found or inactive; skipping PR review",
+        { triggered: false, reason: "Installation not found or inactive" }
+      )
+    };
+  }
+
+  const repoConfig = installation.repositories?.find(
+    (r) =>
+      r.repoId === props.repository.id ||
+      r.fullName.toLowerCase() === props.repository.full_name.toLowerCase()
+  );
+
+  if (!repoConfig || !repoConfig.isActive) {
+    return {
+      status: 200,
+      response: await createResponse<HandlePullRequestResponse>(
+        "success",
+        `PR review is disabled for repository ${props.repository.full_name}`,
+        { triggered: false, reason: "Repository PR review is disabled" }
+      )
+    };
+  }
+
+  // Check if specific target branches are configured for review
+  if (repoConfig.targetBranches && repoConfig.targetBranches.length > 0) {
+    const baseRef = props.pull_request.base.ref;
+    const isTargetBranch = repoConfig.targetBranches.includes(baseRef);
+    if (!isTargetBranch) {
+      return {
+        status: 200,
+        response: await createResponse<HandlePullRequestResponse>(
+          "success",
+          `PR review skipped: base branch "${baseRef}" is not in configured branches [${repoConfig.targetBranches.join(", ")}]`,
+          {
+            triggered: false,
+            reason: `Base branch ${baseRef} is not in configured target branches`
+          }
+        )
+      };
+    }
+  }
+
   const [owner, repo] = props.repository.full_name.split("/");
   const pullNumber = props.pull_request.number;
   const headSha = props.pull_request.head.sha;
 
   const octokit = await getInstallationOctokit(installationId);
+  const appInfo = await getAppInfo();
+  const botSlug = (appInfo.slug || "patchmycode").toLowerCase();
+  const senderLogin = (props.sender?.login || "").toLowerCase();
 
+  // 2. Prevent review loops: skip commits authored by PatchMyCode bot itself
+  const isBotSender =
+    props.sender?.type === "Bot" &&
+    (senderLogin === `${botSlug}[bot]` ||
+      senderLogin.includes(botSlug) ||
+      senderLogin.includes("[bot]"));
+
+  let isBotCommit = isBotSender;
+
+  if (!isBotCommit) {
+    try {
+      const { data: commitData } = await octokit.rest.repos.getCommit({
+        owner,
+        repo,
+        ref: headSha
+      });
+
+      const commitMsg = commitData.commit.message || "";
+      const authorLogin = (commitData.author?.login || "").toLowerCase();
+      const committerLogin = (commitData.committer?.login || "").toLowerCase();
+      const authorName = (commitData.commit.author?.name || "").toLowerCase();
+
+      if (
+        commitMsg.includes("[patchmycode-autofix]") ||
+        commitMsg.includes("[skip-review]") ||
+        authorLogin === `${botSlug}[bot]` ||
+        committerLogin === `${botSlug}[bot]` ||
+        authorName.includes(botSlug)
+      ) {
+        isBotCommit = true;
+      }
+    } catch (err) {
+      console.warn("[PR Loop Check] Failed to fetch commit details:", err);
+    }
+  }
+
+  if (isBotCommit) {
+    console.log(
+      `[PR Review Skipped] Commit ${headSha} on ${props.repository.full_name} was authored by PatchMyCode bot.`
+    );
+    return {
+      status: 200,
+      response: await createResponse<HandlePullRequestResponse>(
+        "success",
+        "Skipping review: commit was authored by PatchMyCode bot itself",
+        {
+          triggered: false,
+          reason: "Commit authored by bot itself"
+        }
+      )
+    };
+  }
+
+  // 3. User / Developer commit on enabled repo: initiate AI review
   await setCommitStatus({
     octokit,
     owner,
@@ -237,18 +353,38 @@ export const handleIssueComment: serviceFunction<
     };
   }
 
+  const installationId = props.installation?.id;
+  if (!installationId) {
+    return {
+      status: 400,
+      response: await createResponse<HandleIssueCommentResponse>(
+        "error",
+        "Missing installation ID",
+        { triggered: false }
+      )
+    };
+  }
+
+  const [owner, repo] = props.repository.full_name.split("/");
+
   console.log(
     `[Auto-Fix Triggered] /fix command on ${props.repository.full_name} #${props.issue.number}`
   );
 
-  // TODO: Dispatch fix task to worker
+  const fixResult = await resolvePullRequestFixes({
+    installationId,
+    owner,
+    repo,
+    pullNumber: props.issue.number,
+    commandText: commentText
+  });
 
   return {
     status: 200,
     response: await createResponse<HandleIssueCommentResponse>(
       "success",
-      "Fix command queued",
-      { triggered: true, command: "/fix" }
+      fixResult.message,
+      { triggered: fixResult.success, command: "/fix" }
     )
   };
 };
@@ -263,8 +399,17 @@ export interface HandlePullRequestReviewCommentPayload {
     body: string;
     path: string;
     line?: number;
+    start_line?: number;
+    original_line?: number;
+    original_start_line?: number;
+    in_reply_to_id?: number;
+    user?: {
+      login: string;
+      type: string;
+    };
   };
   repository: {
+    id: number;
     full_name: string;
   };
   installation?: {
@@ -287,6 +432,51 @@ export const handlePullRequestReviewComment: serviceFunction<
         "success",
         "Ignored non-create review comment",
         { handled: false }
+      )
+    };
+  }
+
+  const commentText = props.comment.body.trim();
+  const isFixCommand = commentText.startsWith("/fix");
+
+  if (isFixCommand) {
+    const installationId = props.installation?.id;
+    if (!installationId) {
+      return {
+        status: 400,
+        response: await createResponse<HandlePullRequestReviewCommentResponse>(
+          "error",
+          "Missing installation ID",
+          { handled: false }
+        )
+      };
+    }
+
+    const [owner, repo] = props.repository.full_name.split("/");
+
+    console.log(
+      `[Inline Auto-Fix Triggered] ${props.repository.full_name} PR #${props.pull_request.number} on file ${props.comment.path}`
+    );
+
+    const fixResult = await resolveCommentFix({
+      installationId,
+      owner,
+      repo,
+      pullNumber: props.pull_request.number,
+      commentId: props.comment.id,
+      inReplyToId: props.comment.in_reply_to_id,
+      commentBody: commentText,
+      commentPath: props.comment.path,
+      commentLine: props.comment.line,
+      commentStartLine: props.comment.start_line
+    });
+
+    return {
+      status: 200,
+      response: await createResponse<HandlePullRequestReviewCommentResponse>(
+        "success",
+        fixResult.message,
+        { handled: fixResult.success }
       )
     };
   }

@@ -12,6 +12,14 @@ export interface GenerateStructuredInput {
 export async function generateStructuredAIResponse<T>(
   input: GenerateStructuredInput
 ): Promise<T> {
+  // console.log("---------------------PROMPT START-----------------------------");
+  // console.log("---------------------PROMPT START-----------------------------");
+  // console.log("---------------------PROMPT START-----------------------------");
+  // console.log(input.prompt);
+  // console.log("---------------------PROMPT END-----------------------------");
+  // console.log("---------------------PROMPT END-----------------------------");
+  // console.log("---------------------PROMPT END-----------------------------");
+
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",
     contents: input.prompt,
@@ -23,5 +31,15 @@ export async function generateStructuredAIResponse<T>(
   });
 
   const rawText = response.text || "{}";
-  return JSON.parse(rawText) as T;
+  const parsed = JSON.parse(rawText) as T;
+
+  // console.log("---------------------OUTPUT START-----------------------------");
+  // console.log("---------------------OUTPUT START-----------------------------");
+  // console.log("---------------------OUTPUT START-----------------------------");
+  // console.log(JSON.stringify(parsed, null, 2));
+  // console.log("---------------------OUTPUT END-----------------------------");
+  // console.log("---------------------OUTPUT END-----------------------------");
+  // console.log("---------------------OUTPUT END-----------------------------");
+
+  return parsed;
 }

@@ -24,7 +24,7 @@ async function handleLogout() {
 
 const links: SidebarLink[] = [
   {
-    title: "Dashboard",
+    title: "Repositories",
     href: basePath,
     icon: LayoutDashboard,
     exact: true
@@ -34,7 +34,7 @@ const links: SidebarLink[] = [
 export function Sidebar() {
   return (
     <GenericSidebar
-      title="User Portal"
+      title="PATCH MY CODE"
       icon={User}
       links={links}
       onLogout={() => handleLogout()}

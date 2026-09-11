@@ -26,5 +26,20 @@ router.patch(
   validation.toggleRepoStatus,
   controller.toggleRepositoryStatus
 );
+router.get(
+  "/repositories/:repoId",
+  validation.getRepoDetails,
+  controller.getRepositoryDetails
+);
+router.patch(
+  "/repositories/:repoId/branches",
+  validation.updateRepoBranches,
+  controller.updateRepositoryBranches
+);
+router.post(
+  "/repositories/:repoId/fix",
+  validation.fixRepoIssue,
+  controller.fixRepositoryIssue
+);
 
 export default router;

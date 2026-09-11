@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildApiFunctionProps } from ".";
 import { UserAPI } from "@/api/user";
-import { RepositoryItem } from "@/types/domain/github";
+import { RepositoryDetailView, RepositoryItem } from "@/types/domain/github";
 
 export const useUserInstallations = () => {
   return useQuery({
@@ -196,3 +196,107 @@ export const useDisconnectGithub = () => {
     }
   });
 };
+
+export const useRepositoryDetails = (repoId: number) => {
+  return useQuery({
+    queryKey: ["user", "github", "repository", repoId],
+    queryFn: async () => {
+      const res = await UserAPI.github.getRepositoryDetails(repoId, {
+        forceReturn: false,
+        toastConfig: { error: { enabled: false } }
+      });
+      if (res.data.error) {
+        throw new Error(res.data.message || "Failed to fetch repository details");
+      }
+      return res.data.data;
+    },
+    enabled: !!repoId && !isNaN(repoId),
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false
+  });
+};
+
+export const useUpdateRepoBranches = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      repoId,
+      targetBranches
+    }: {
+      repoId: number;
+      targetBranches: string[];
+    }) => {
+      const res = await UserAPI.github.updateRepoBranches(repoId, {
+        payload: { targetBranches },
+        forceReturn: false,
+        toastConfig: {
+          success: { enabled: true },
+          error: { enabled: true }
+        }
+      });
+      if (res.data.error) {
+        throw new Error(res.data.message || "Failed to update repository branches");
+      }
+      return res.data.data;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({
+        queryKey: ["user", "github", "repository", vars.repoId]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["user", "github", "repositories"]
+      });
+    }
+  });
+};
+
+export const useFixIssue = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      repoId,
+      pullNumber,
+      path,
+      suggestion,
+      targetLine,
+      startLine,
+      commentId
+    }: {
+      repoId: number;
+      pullNumber: number;
+      path: string;
+      suggestion: string;
+      targetLine?: number;
+      startLine?: number;
+      commentId?: number;
+    }) => {
+      const res = await UserAPI.github.fixIssue(repoId, {
+        payload: {
+          pullNumber,
+          path,
+          suggestion,
+          targetLine,
+          startLine,
+          commentId
+        },
+        forceReturn: false,
+        toastConfig: {
+          success: { enabled: true },
+          error: { enabled: true }
+        }
+      });
+      if (res.data.error) {
+        throw new Error(res.data.message || "Failed to apply fix");
+      }
+      return res.data.data;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({
+        queryKey: ["user", "github", "repository", vars.repoId]
+      });
+    }
+  });
+};
+
