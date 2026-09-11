@@ -206,7 +206,9 @@ export const useRepositoryDetails = (repoId: number) => {
         toastConfig: { error: { enabled: false } }
       });
       if (res.data.error) {
-        throw new Error(res.data.message || "Failed to fetch repository details");
+        throw new Error(
+          res.data.message || "Failed to fetch repository details"
+        );
       }
       return res.data.data;
     },
@@ -236,7 +238,9 @@ export const useUpdateRepoBranches = () => {
         }
       });
       if (res.data.error) {
-        throw new Error(res.data.message || "Failed to update repository branches");
+        throw new Error(
+          res.data.message || "Failed to update repository branches"
+        );
       }
       return res.data.data;
     },
@@ -299,4 +303,3 @@ export const useFixIssue = () => {
     }
   });
 };
-

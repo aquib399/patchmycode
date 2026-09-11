@@ -25,8 +25,7 @@ export const USER_ENDPOINTS = () => {
         `${base}/github/repositories/${repoId}`,
       updateRepoBranches: (repoId: number) =>
         `${base}/github/repositories/${repoId}/branches`,
-      fixIssue: (repoId: number) =>
-        `${base}/github/repositories/${repoId}/fix`
+      fixIssue: (repoId: number) => `${base}/github/repositories/${repoId}/fix`
     }
   };
 };

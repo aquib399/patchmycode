@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState, useMemo, Suspense } from "react";
@@ -107,17 +108,7 @@ function RepoDetailContent() {
 
   const handleSaveBranches = () => {
     const branchesToSave = isAllBranches ? [] : selectedBranches;
-    updateBranchesMutation.mutate(
-      { repoId, targetBranches: branchesToSave },
-      {
-        onSuccess: () => {
-          toast.success("Target review branches updated successfully");
-        },
-        onError: (err) => {
-          toast.error(err.message || "Failed to update target branches");
-        }
-      }
-    );
+    updateBranchesMutation.mutate({ repoId, targetBranches: branchesToSave });
   };
 
   const handleResetBranches = () => {
@@ -132,25 +123,11 @@ function RepoDetailContent() {
   };
 
   const handleToggleRepoActive = (checked: boolean) => {
-    toggleStatusMutation.mutate(
-      { repoId, isActive: checked },
-      {
-        onSuccess: () => {
-          toast.success(
-            `Automated PR review ${checked ? "activated" : "paused"}`
-          );
-          refetch();
-        },
-        onError: (err) => {
-          toast.error(err.message || "Failed to update review status");
-        }
-      }
-    );
+    toggleStatusMutation.mutate({ repoId, isActive: checked }, {});
   };
 
   const handleFixIssue = (pr: PullRequestItem, issue: PullRequestIssue) => {
     if (!issue.suggestion) {
-      toast.error("No code suggestion available for this issue");
       return;
     }
 
@@ -169,16 +146,12 @@ function RepoDetailContent() {
       },
       {
         onSuccess: (data) => {
-          const shaShort = data?.commitSha ? data.commitSha.substring(0, 7) : "";
-          toast.success(
-            `Fix applied and committed to '${pr.head.ref}'${shaShort ? ` (${shaShort})` : ""}!`
-          );
+          const shaShort = data?.commitSha
+            ? data.commitSha.substring(0, 7)
+            : "";
+
           setFixingIssueId(null);
           refetch();
-        },
-        onError: (err) => {
-          toast.error(err.message || "Failed to apply fix and commit");
-          setFixingIssueId(null);
         }
       }
     );
@@ -216,19 +189,20 @@ function RepoDetailContent() {
           Repository Not Found
         </h2>
         <p className="text-muted-foreground mt-2 font-mono text-xs">
-          The requested repository could not be located or is not associated with your account.
+          The requested repository could not be located or is not associated
+          with your account.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Link
             href="/app"
-            className="border border-border hover:bg-muted/30 font-mono text-xs px-4 py-2 transition-colors flex items-center gap-2"
+            className="border-border hover:bg-muted/30 flex items-center gap-2 border px-4 py-2 font-mono text-xs transition-colors"
           >
             <ArrowLeft className="size-3" />
             Back to Repositories
           </Link>
           <button
             onClick={() => refetch()}
-            className="border border-foreground bg-foreground text-background hover:bg-foreground/90 font-mono text-xs px-4 py-2 transition-colors flex items-center gap-2"
+            className="border-foreground bg-foreground text-background hover:bg-foreground/90 flex items-center gap-2 border px-4 py-2 font-mono text-xs transition-colors"
           >
             <RefreshCw className="size-3" />
             Retry
@@ -258,14 +232,14 @@ function RepoDetailContent() {
             <span className="text-border">/</span>
             <span className="text-muted-foreground">@{repo.accountLogin}</span>
             <span className="text-border">/</span>
-            <span className="font-semibold text-foreground">{repo.name}</span>
+            <span className="text-foreground font-semibold">{repo.name}</span>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => refetch()}
               disabled={isRefetching}
-              className="border border-border hover:bg-muted/30 flex items-center gap-2 px-3 py-1.5 font-mono text-xs transition-colors cursor-pointer"
+              className="border-border hover:bg-muted/30 flex cursor-pointer items-center gap-2 border px-3 py-1.5 font-mono text-xs transition-colors"
             >
               <RefreshCw
                 className={`size-3 ${isRefetching ? "animate-spin" : ""}`}
@@ -277,7 +251,7 @@ function RepoDetailContent() {
               href={repo.htmlUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="border border-border hover:bg-muted/30 flex items-center gap-2 px-3 py-1.5 font-mono text-xs transition-colors"
+              className="border-border hover:bg-muted/30 flex items-center gap-2 border px-3 py-1.5 font-mono text-xs transition-colors"
             >
               <span>GitHub</span>
               <ExternalLink className="size-3 opacity-60" />
@@ -296,58 +270,69 @@ function RepoDetailContent() {
               REPOSITORY CONFIGURATION
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-mono font-medium tracking-tight">
+            <h1 className="font-mono text-3xl font-medium tracking-tight sm:text-4xl lg:text-5xl">
               {repo.fullName}
             </h1>
 
             <p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
-              {repo.description || "Continuous PR review pipeline with AST blast-radius caller tracing."}
+              {repo.description ||
+                "Continuous PR review pipeline with AST blast-radius caller tracing."}
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-2.5 font-mono text-xs">
-              <span className="border border-border px-2.5 py-1 text-muted-foreground">
+              <span className="border-border text-muted-foreground border px-2.5 py-1">
                 {repo.private ? "PRIVATE" : "PUBLIC"}
               </span>
               {repo.language && (
-                <span className="border border-border px-2.5 py-1 text-muted-foreground">
+                <span className="border-border text-muted-foreground border px-2.5 py-1">
                   {repo.language}
                 </span>
               )}
-              <span className="border border-border px-2.5 py-1 text-muted-foreground">
+              <span className="border-border text-muted-foreground border px-2.5 py-1">
                 ★ {repo.starsCount}
               </span>
-              <span className="border border-border px-2.5 py-1 text-muted-foreground">
+              <span className="border-border text-muted-foreground border px-2.5 py-1">
                 ⑂ {repo.forksCount}
               </span>
-              <span className="border border-border px-2.5 py-1 text-muted-foreground">
+              <span className="border-border text-muted-foreground border px-2.5 py-1">
                 ⊙ {repo.openIssuesCount} issues
               </span>
             </div>
           </div>
 
           {/* Right Column: Engine Review Status Control Panel */}
-          <div className="p-6 sm:p-10 lg:p-12 flex flex-col justify-between bg-muted/10">
+          <div className="bg-muted/10 flex flex-col justify-between p-6 sm:p-10 lg:p-12">
             <div>
               <div className="text-muted-foreground mb-4 flex items-center justify-between font-mono text-xs">
                 <span>PIPELINE STATUS</span>
-                <span className={repo.isActive ? "text-success font-semibold" : "text-muted-foreground"}>
+                <span
+                  className={
+                    repo.isActive
+                      ? "text-success font-semibold"
+                      : "text-muted-foreground"
+                  }
+                >
                   {repo.isActive ? "+ ACTIVE" : "− PAUSED"}
                 </span>
               </div>
 
-              <h2 className="text-xl font-medium font-mono">
-                {repo.isActive ? "Automated PR Review Enabled" : "Review Pipeline Paused"}
+              <h2 className="font-mono text-xl font-medium">
+                {repo.isActive
+                  ? "Automated PR Review Enabled"
+                  : "Review Pipeline Paused"}
               </h2>
 
-              <p className="text-muted-foreground mt-2 text-xs leading-relaxed font-mono">
+              <p className="text-muted-foreground mt-2 font-mono text-xs leading-relaxed">
                 {repo.isActive
                   ? "Incoming pull requests targeting monitored branches trigger automatic analysis, call-graph tracing, and suggestions."
                   : "Reviews are currently paused. Incoming GitHub webhooks will be skipped without initiating LLM review jobs."}
               </p>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
-              <span className="font-mono text-xs text-muted-foreground">PR Review Engine:</span>
+            <div className="border-border mt-8 flex items-center justify-between border-t pt-6">
+              <span className="text-muted-foreground font-mono text-xs">
+                PR Review Engine:
+              </span>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-xs font-medium">
                   {repo.isActive ? "ON" : "OFF"}
@@ -370,7 +355,7 @@ function RepoDetailContent() {
             <p className="text-muted-foreground font-mono text-xs">
               01 / DEFAULT BRANCH
             </p>
-            <p className="mt-3 font-mono text-3xl font-medium tracking-tight sm:text-4xl text-foreground">
+            <p className="text-foreground mt-3 font-mono text-3xl font-medium tracking-tight sm:text-4xl">
               {repo.defaultBranch}
             </p>
             <p className="text-muted-foreground mt-2 font-mono text-[11px]">
@@ -382,12 +367,12 @@ function RepoDetailContent() {
             <p className="text-muted-foreground font-mono text-xs">
               02 / REVIEW BRANCHES
             </p>
-            <p className="mt-3 font-mono text-3xl font-medium tracking-tight sm:text-4xl text-foreground truncate">
+            <p className="text-foreground mt-3 truncate font-mono text-3xl font-medium tracking-tight sm:text-4xl">
               {repo.targetBranches && repo.targetBranches.length > 0
                 ? `${repo.targetBranches.length} BRANCHES`
                 : "ALL BRANCHES"}
             </p>
-            <p className="text-muted-foreground mt-2 font-mono text-[11px] truncate">
+            <p className="text-muted-foreground mt-2 truncate font-mono text-[11px]">
               {repo.targetBranches && repo.targetBranches.length > 0
                 ? repo.targetBranches.join(", ")
                 : "Reviews trigger on any base branch"}
@@ -398,7 +383,7 @@ function RepoDetailContent() {
             <p className="text-muted-foreground font-mono text-xs">
               03 / OPEN PULL REQUESTS
             </p>
-            <p className="mt-3 font-mono text-3xl font-medium tracking-tight sm:text-4xl text-foreground">
+            <p className="text-foreground mt-3 font-mono text-3xl font-medium tracking-tight sm:text-4xl">
               {repo.pullRequests?.length ?? 0}
             </p>
             <p className="text-muted-foreground mt-2 font-mono text-[11px]">
@@ -413,27 +398,28 @@ function RepoDetailContent() {
       {/* 4. Automated Review Branch Filter Rules */}
       <section className="border-border border-b">
         <div className="mx-auto max-w-7xl p-6 sm:p-10 lg:p-12">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-8 border-b border-border">
+          <div className="border-border flex flex-col justify-between gap-6 border-b pb-8 sm:flex-row sm:items-end">
             <div>
               <div className="text-muted-foreground mb-3 flex items-center gap-3 font-mono text-xs">
                 <span className="bg-border h-px w-8" />
                 01 BRANCH FILTER RULES
               </div>
-              <h2 className="text-2xl font-medium tracking-tight sm:text-3xl font-mono">
+              <h2 className="font-mono text-2xl font-medium tracking-tight sm:text-3xl">
                 Target Base Branches
               </h2>
-              <p className="text-muted-foreground mt-2 text-xs sm:text-sm max-w-xl">
-                Define which base branches trigger automated reviews. When a PR is opened targeting
-                these branches, PatchMyCode analyzes the diff and traces callers.
+              <p className="text-muted-foreground mt-2 max-w-xl text-xs sm:text-sm">
+                Define which base branches trigger automated reviews. When a PR
+                is opened targeting these branches, PatchMyCode analyzes the
+                diff and traces callers.
               </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex shrink-0 items-center gap-3">
               {isBranchDirty && (
                 <button
                   type="button"
                   onClick={handleResetBranches}
-                  className="border border-border hover:bg-muted/30 font-mono text-xs px-4 py-2 transition-colors cursor-pointer"
+                  className="border-border hover:bg-muted/30 cursor-pointer border px-4 py-2 font-mono text-xs transition-colors"
                 >
                   Reset
                 </button>
@@ -442,7 +428,7 @@ function RepoDetailContent() {
                 type="button"
                 onClick={handleSaveBranches}
                 disabled={!isBranchDirty || updateBranchesMutation.isPending}
-                className="border border-foreground bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 font-mono text-xs px-5 py-2 transition-colors flex items-center gap-2 cursor-pointer font-medium"
+                className="border-foreground bg-foreground text-background hover:bg-foreground/90 flex cursor-pointer items-center gap-2 border px-5 py-2 font-mono text-xs font-medium transition-colors disabled:opacity-40"
               >
                 {updateBranchesMutation.isPending && (
                   <RefreshCw className="size-3 animate-spin" />
@@ -453,7 +439,7 @@ function RepoDetailContent() {
           </div>
 
           {/* Mode Selector */}
-          <div className="mt-8 grid sm:grid-cols-2 gap-4">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div
               onClick={() => setIsAllBranches(true)}
               className={`cursor-pointer border p-6 transition-colors ${
@@ -464,10 +450,13 @@ function RepoDetailContent() {
             >
               <div className="flex items-center justify-between font-mono text-xs font-semibold">
                 <span>ALL BRANCHES (RECOMMENDED)</span>
-                <span className="text-muted-foreground">{isAllBranches ? "[X]" : "[ ]"}</span>
+                <span className="text-muted-foreground">
+                  {isAllBranches ? "[X]" : "[ ]"}
+                </span>
               </div>
-              <p className="text-muted-foreground mt-2 text-xs leading-relaxed font-mono">
-                Reviews every pull request regardless of the base branch (master, main, dev, staging).
+              <p className="text-muted-foreground mt-2 font-mono text-xs leading-relaxed">
+                Reviews every pull request regardless of the base branch
+                (master, main, dev, staging).
               </p>
             </div>
 
@@ -486,22 +475,26 @@ function RepoDetailContent() {
             >
               <div className="flex items-center justify-between font-mono text-xs font-semibold">
                 <span>SPECIFIC TARGETS ONLY</span>
-                <span className="text-muted-foreground">{!isAllBranches ? "[X]" : "[ ]"}</span>
+                <span className="text-muted-foreground">
+                  {!isAllBranches ? "[X]" : "[ ]"}
+                </span>
               </div>
-              <p className="text-muted-foreground mt-2 text-xs leading-relaxed font-mono">
-                Only review pull requests targeting selected base branches. All other branches will be skipped.
+              <p className="text-muted-foreground mt-2 font-mono text-xs leading-relaxed">
+                Only review pull requests targeting selected base branches. All
+                other branches will be skipped.
               </p>
             </div>
           </div>
 
           {/* Branch Matrix Table (shown when Specific Targets is active) */}
           {!isAllBranches && (
-            <div className="border border-border mt-8 overflow-hidden">
+            <div className="border-border mt-8 overflow-hidden border">
               <div className="border-border bg-muted/20 flex flex-col justify-between gap-3 border-b p-4 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-2 font-mono text-xs">
                   <span className="font-semibold">AVAILABLE BRANCHES:</span>
                   <span className="text-muted-foreground">
-                    ({selectedBranches.length} of {allAvailableBranches.length} selected)
+                    ({selectedBranches.length} of {allAvailableBranches.length}{" "}
+                    selected)
                   </span>
                 </div>
 
@@ -509,23 +502,26 @@ function RepoDetailContent() {
                   <button
                     type="button"
                     onClick={() =>
-                      repo.defaultBranch && setSelectedBranches([repo.defaultBranch])
+                      repo.defaultBranch &&
+                      setSelectedBranches([repo.defaultBranch])
                     }
-                    className="border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2.5 py-1 font-mono text-[11px] transition-colors cursor-pointer"
+                    className="border-border text-muted-foreground hover:text-foreground hover:bg-muted/30 cursor-pointer border px-2.5 py-1 font-mono text-[11px] transition-colors"
                   >
                     Default only ({repo.defaultBranch})
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelectedBranches([...allAvailableBranches])}
-                    className="border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2.5 py-1 font-mono text-[11px] transition-colors cursor-pointer"
+                    onClick={() =>
+                      setSelectedBranches([...allAvailableBranches])
+                    }
+                    className="border-border text-muted-foreground hover:text-foreground hover:bg-muted/30 cursor-pointer border px-2.5 py-1 font-mono text-[11px] transition-colors"
                   >
                     Select all
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedBranches([])}
-                    className="border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2.5 py-1 font-mono text-[11px] transition-colors cursor-pointer"
+                    className="border-border text-muted-foreground hover:text-foreground hover:bg-muted/30 cursor-pointer border px-2.5 py-1 font-mono text-[11px] transition-colors"
                   >
                     Clear all
                   </button>
@@ -533,20 +529,20 @@ function RepoDetailContent() {
               </div>
 
               {allAvailableBranches.length > 6 && (
-                <div className="border-b border-border p-3 bg-muted/5 flex items-center gap-2">
-                  <Search className="size-3.5 text-muted-foreground" />
+                <div className="border-border bg-muted/5 flex items-center gap-2 border-b p-3">
+                  <Search className="text-muted-foreground size-3.5" />
                   <input
                     type="text"
                     value={branchSearch}
                     onChange={(e) => setBranchSearch(e.target.value)}
                     placeholder="Filter branches..."
-                    className="bg-transparent font-mono text-xs w-full outline-none text-foreground"
+                    className="text-foreground w-full bg-transparent font-mono text-xs outline-none"
                   />
                 </div>
               )}
 
               {/* Technical Branch Rows */}
-              <div className="divide-y divide-border font-mono text-xs">
+              <div className="divide-border divide-y font-mono text-xs">
                 {filteredBranches.map((branch) => {
                   const isSelected = selectedBranches.includes(branch);
                   const isDefault = branch === repo.defaultBranch;
@@ -555,7 +551,7 @@ function RepoDetailContent() {
                     <div
                       key={branch}
                       onClick={() => handleToggleBranch(branch)}
-                      className={`flex items-center justify-between p-3.5 transition-colors cursor-pointer ${
+                      className={`flex cursor-pointer items-center justify-between p-3.5 transition-colors ${
                         isSelected ? "bg-muted/20" : "hover:bg-muted/10"
                       }`}
                     >
@@ -564,19 +560,27 @@ function RepoDetailContent() {
                           {isSelected ? "[X]" : "[ ]"}
                         </span>
                         <div className="flex items-center gap-2">
-                          <GitBranch className="size-3.5 text-muted-foreground" />
-                          <span className={isSelected ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                          <GitBranch className="text-muted-foreground size-3.5" />
+                          <span
+                            className={
+                              isSelected
+                                ? "text-foreground font-semibold"
+                                : "text-muted-foreground"
+                            }
+                          >
                             {branch}
                           </span>
                         </div>
                         {isDefault && (
-                          <span className="border border-border text-[10px] px-1.5 py-0.2 text-muted-foreground">
+                          <span className="border-border py-0.2 text-muted-foreground border px-1.5 text-[10px]">
                             DEFAULT
                           </span>
                         )}
                       </div>
 
-                      <span className={`text-[11px] ${isSelected ? "text-success" : "text-muted-foreground"}`}>
+                      <span
+                        className={`text-[11px] ${isSelected ? "text-success" : "text-muted-foreground"}`}
+                      >
                         {isSelected ? "MONITORED" : "SKIPPED"}
                       </span>
                     </div>
@@ -584,7 +588,7 @@ function RepoDetailContent() {
                 })}
 
                 {filteredBranches.length === 0 && (
-                  <div className="p-6 text-center text-muted-foreground font-mono text-xs">
+                  <div className="text-muted-foreground p-6 text-center font-mono text-xs">
                     No branches match &quot;{branchSearch}&quot;
                   </div>
                 )}
@@ -598,33 +602,35 @@ function RepoDetailContent() {
       <section className="border-border border-b">
         <div className="mx-auto max-w-7xl p-6 sm:p-10 lg:p-12">
           {/* Section Header with Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-8 border-b border-border">
+          <div className="border-border flex flex-col justify-between gap-4 border-b pb-8 sm:flex-row sm:items-end">
             <div>
               <div className="text-muted-foreground mb-3 flex items-center gap-3 font-mono text-xs">
                 <span className="bg-border h-px w-8" />
                 02 PULL REQUESTS & REVIEWS
               </div>
-              <h2 className="text-2xl font-medium tracking-tight sm:text-3xl font-mono">
+              <h2 className="font-mono text-2xl font-medium tracking-tight sm:text-3xl">
                 Open Pull Requests ({allPrs.length})
               </h2>
-              <p className="text-muted-foreground mt-2 text-xs sm:text-sm max-w-xl">
-                Continuous code review findings and caller tracing. Each pull request is tracked independently below with 1-click patch commits.
+              <p className="text-muted-foreground mt-2 max-w-xl text-xs sm:text-sm">
+                Continuous code review findings and caller tracing. Each pull
+                request is tracked independently below with 1-click patch
+                commits.
               </p>
             </div>
 
             {allPrs.length > 0 && (
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
                   onClick={() => handleExpandAllPrs(allPrs)}
-                  className="border border-border hover:bg-muted/30 font-mono text-xs px-3 py-1.5 transition-colors cursor-pointer"
+                  className="border-border hover:bg-muted/30 cursor-pointer border px-3 py-1.5 font-mono text-xs transition-colors"
                 >
                   Expand All
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCollapseAllPrs(allPrs)}
-                  className="border border-border hover:bg-muted/30 font-mono text-xs px-3 py-1.5 transition-colors cursor-pointer"
+                  className="border-border hover:bg-muted/30 cursor-pointer border px-3 py-1.5 font-mono text-xs transition-colors"
                 >
                   Collapse All
                 </button>
@@ -634,23 +640,26 @@ function RepoDetailContent() {
 
           {/* PR Backlog Index Table (Shown when PRs exist) */}
           {allPrs.length > 0 && (
-            <div className="mt-8 mb-12 border border-border bg-muted/10 overflow-hidden">
-              <div className="border-b border-border bg-muted/30 px-4 py-3 font-mono text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="font-semibold text-foreground tracking-wider uppercase">
+            <div className="border-border bg-muted/10 mt-8 mb-12 overflow-hidden border">
+              <div className="border-border bg-muted/30 text-muted-foreground flex flex-col justify-between gap-2 border-b px-4 py-3 font-mono text-xs sm:flex-row sm:items-center">
+                <span className="text-foreground font-semibold tracking-wider uppercase">
                   PULL REQUEST BACKLOG INDEX ({allPrs.length})
                 </span>
                 <span className="text-[11px]">
-                  {prsWithIssues.length} with actionable findings · {cleanPrs.length} clean reviews
+                  {prsWithIssues.length} with actionable findings ·{" "}
+                  {cleanPrs.length} clean reviews
                 </span>
               </div>
 
               {/* Filter Pills Bar inside Backlog */}
-              <div className="border-b border-border p-3 flex flex-wrap items-center gap-2 bg-muted/5 font-mono text-xs">
-                <span className="text-muted-foreground mr-1 text-[11px]">FILTER:</span>
+              <div className="border-border bg-muted/5 flex flex-wrap items-center gap-2 border-b p-3 font-mono text-xs">
+                <span className="text-muted-foreground mr-1 text-[11px]">
+                  FILTER:
+                </span>
                 <button
                   type="button"
                   onClick={() => setPrFilter("all")}
-                  className={`px-2.5 py-1 border transition-colors cursor-pointer text-[11px] ${
+                  className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
                     prFilter === "all"
                       ? "border-foreground bg-foreground text-background font-semibold"
                       : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -661,7 +670,7 @@ function RepoDetailContent() {
                 <button
                   type="button"
                   onClick={() => setPrFilter("issues")}
-                  className={`px-2.5 py-1 border transition-colors cursor-pointer text-[11px] ${
+                  className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
                     prFilter === "issues"
                       ? "border-foreground bg-foreground text-background font-semibold"
                       : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -672,7 +681,7 @@ function RepoDetailContent() {
                 <button
                   type="button"
                   onClick={() => setPrFilter("clean")}
-                  className={`px-2.5 py-1 border transition-colors cursor-pointer text-[11px] ${
+                  className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
                     prFilter === "clean"
                       ? "border-foreground bg-foreground text-background font-semibold"
                       : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -683,24 +692,27 @@ function RepoDetailContent() {
               </div>
 
               {/* Table Rows */}
-              <div className="divide-y divide-border font-mono text-xs">
+              <div className="divide-border divide-y font-mono text-xs">
                 {displayedPrs.map((p, idx) => {
                   const count = (p.issues || []).length;
                   return (
                     <div
                       key={p.number}
-                      className="p-3.5 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/20 transition-colors"
+                      className="hover:bg-muted/20 flex flex-col justify-between gap-3 p-3.5 transition-colors sm:flex-row sm:items-center sm:px-5"
                     >
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="border border-border text-muted-foreground px-1.5 py-0.2 text-[10px]">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="border-border text-muted-foreground py-0.2 border px-1.5 text-[10px]">
                           PR {String(idx + 1).padStart(2, "0")}
                         </span>
                         <a
                           href={`#pr-${p.number}`}
                           onClick={() => {
-                            setCollapsedPrs((prev) => ({ ...prev, [p.number]: false }));
+                            setCollapsedPrs((prev) => ({
+                              ...prev,
+                              [p.number]: false
+                            }));
                           }}
-                          className="font-semibold text-foreground hover:underline truncate max-w-sm sm:max-w-md"
+                          className="text-foreground max-w-sm truncate font-semibold hover:underline sm:max-w-md"
                         >
                           #{p.number} {p.title}
                         </a>
@@ -712,7 +724,7 @@ function RepoDetailContent() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-4 shrink-0">
+                      <div className="flex shrink-0 items-center gap-4">
                         {count > 0 ? (
                           <span className="text-warning text-[11px] font-semibold">
                             ● {count} ISSUE{count > 1 ? "S" : ""}
@@ -726,9 +738,12 @@ function RepoDetailContent() {
                         <a
                           href={`#pr-${p.number}`}
                           onClick={() => {
-                            setCollapsedPrs((prev) => ({ ...prev, [p.number]: false }));
+                            setCollapsedPrs((prev) => ({
+                              ...prev,
+                              [p.number]: false
+                            }));
                           }}
-                          className="border border-border hover:border-foreground text-muted-foreground hover:text-foreground px-2.5 py-1 text-[11px] transition-colors"
+                          className="border-border hover:border-foreground text-muted-foreground hover:text-foreground border px-2.5 py-1 text-[11px] transition-colors"
                         >
                           Inspect PR ↓
                         </a>
@@ -742,17 +757,20 @@ function RepoDetailContent() {
 
           {/* Empty State */}
           {allPrs.length === 0 ? (
-            <div className="py-20 text-center font-mono text-xs text-muted-foreground space-y-2">
+            <div className="text-muted-foreground space-y-2 py-20 text-center font-mono text-xs">
               <p>No open pull requests found for this repository.</p>
-              <p className="text-[11px]">Open a pull request on GitHub to trigger continuous automated review.</p>
+              <p className="text-[11px]">
+                Open a pull request on GitHub to trigger continuous automated
+                review.
+              </p>
             </div>
           ) : displayedPrs.length === 0 ? (
-            <div className="py-16 text-center font-mono text-xs text-muted-foreground">
+            <div className="text-muted-foreground py-16 text-center font-mono text-xs">
               No pull requests match the &apos;{prFilter}&apos; filter.
             </div>
           ) : (
             /* Individual Distinct PR Containers */
-            <div className="space-y-16 mt-8">
+            <div className="mt-8 space-y-16">
               {displayedPrs.map((pr, index) => {
                 const issues = pr.issues || [];
                 const hasIssues = issues.length > 0;
@@ -762,28 +780,31 @@ function RepoDetailContent() {
                   <div
                     key={pr.number}
                     id={`pr-${pr.number}`}
-                    className="border-2 border-border bg-background overflow-hidden"
+                    className="border-border bg-background overflow-hidden border-2"
                   >
                     {/* Master PR Box Header */}
-                    <div className="border-b border-border bg-muted/30 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="border border-foreground bg-foreground text-background px-2.5 py-1 font-bold text-xs">
-                          PR {String(index + 1).padStart(2, "0")} / {String(displayedPrs.length).padStart(2, "0")}
+                    <div className="border-border bg-muted/30 flex flex-col justify-between gap-4 border-b p-5 font-mono text-xs md:flex-row md:items-center">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="border-foreground bg-foreground text-background border px-2.5 py-1 text-xs font-bold">
+                          PR {String(index + 1).padStart(2, "0")} /{" "}
+                          {String(displayedPrs.length).padStart(2, "0")}
                         </span>
 
                         <a
                           href={pr.htmlUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-bold text-foreground text-sm hover:underline flex items-center gap-1.5"
+                          className="text-foreground flex items-center gap-1.5 text-sm font-bold hover:underline"
                         >
-                          <span>#{pr.number} {pr.title}</span>
+                          <span>
+                            #{pr.number} {pr.title}
+                          </span>
                           <ExternalLink className="size-3 opacity-60" />
                         </a>
 
                         <span className="text-muted-foreground">·</span>
 
-                        <span className="border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground font-medium">
+                        <span className="border-border bg-muted/40 text-foreground border px-2 py-0.5 text-[11px] font-medium">
                           {pr.head.ref} → {pr.base.ref}
                         </span>
 
@@ -792,13 +813,14 @@ function RepoDetailContent() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex shrink-0 items-center gap-3">
                         {hasIssues ? (
-                          <span className="text-warning font-mono text-[11px] border border-warning/40 bg-warning/10 px-3 py-1 font-semibold">
-                            {issues.length} ISSUE{issues.length > 1 ? "S" : ""} FOUND
+                          <span className="text-warning border-warning/40 bg-warning/10 border px-3 py-1 font-mono text-[11px] font-semibold">
+                            {issues.length} ISSUE{issues.length > 1 ? "S" : ""}{" "}
+                            FOUND
                           </span>
                         ) : (
-                          <span className="text-success font-mono text-[11px] border border-success/40 bg-success/10 px-3 py-1 font-semibold">
+                          <span className="text-success border-success/40 bg-success/10 border px-3 py-1 font-mono text-[11px] font-semibold">
                             + CLEAN REVIEW
                           </span>
                         )}
@@ -806,27 +828,35 @@ function RepoDetailContent() {
                         <button
                           type="button"
                           onClick={() => togglePrCollapse(pr.number)}
-                          className="border border-border hover:bg-muted/40 px-3 py-1 text-[11px] font-mono transition-colors cursor-pointer"
+                          className="border-border hover:bg-muted/40 cursor-pointer border px-3 py-1 font-mono text-[11px] transition-colors"
                         >
-                          {isCollapsed ? `+ EXPAND (${issues.length} findings)` : "− COLLAPSE"}
+                          {isCollapsed
+                            ? `+ EXPAND (${issues.length} findings)`
+                            : "− COLLAPSE"}
                         </button>
                       </div>
                     </div>
 
                     {/* PR Body (Shown when not collapsed) */}
                     {!isCollapsed && (
-                      <div className="p-6 sm:p-8 bg-muted/5 space-y-8">
+                      <div className="bg-muted/5 space-y-8 p-6 sm:p-8">
                         {hasIssues ? (
                           <>
-                            <div className="text-muted-foreground font-mono text-xs flex items-center justify-between border-b border-border pb-3">
-                              <span>REVIEW FINDINGS FOR #{pr.number} ({issues.length} DETECTED):</span>
-                              <span className="text-[11px]">base: {pr.base.ref} · head: {pr.head.ref}</span>
+                            <div className="text-muted-foreground border-border flex items-center justify-between border-b pb-3 font-mono text-xs">
+                              <span>
+                                REVIEW FINDINGS FOR #{pr.number} (
+                                {issues.length} DETECTED):
+                              </span>
+                              <span className="text-[11px]">
+                                base: {pr.base.ref} · head: {pr.head.ref}
+                              </span>
                             </div>
 
                             <div className="space-y-8">
                               {issues.map((issue, issueIdx) => {
                                 const isFixing =
-                                  fixingIssueId === (issue.id || issue.commentId);
+                                  fixingIssueId ===
+                                  (issue.id || issue.commentId);
 
                                 return (
                                   <div
@@ -834,13 +864,18 @@ function RepoDetailContent() {
                                     className="border-border bg-muted/20 overflow-hidden border"
                                   >
                                     {/* Diff Header */}
-                                    <div className="border-border flex h-11 items-center justify-between border-b px-4 font-mono text-xs bg-muted/20">
+                                    <div className="border-border bg-muted/20 flex h-11 items-center justify-between border-b px-4 font-mono text-xs">
                                       <div className="flex items-center gap-2">
-                                        <span className="border border-border px-1.5 py-0.2 text-[10px] bg-background text-muted-foreground">
-                                          FINDING {String(issueIdx + 1).padStart(2, "0")}
+                                        <span className="border-border py-0.2 bg-background text-muted-foreground border px-1.5 text-[10px]">
+                                          FINDING{" "}
+                                          {String(issueIdx + 1).padStart(
+                                            2,
+                                            "0"
+                                          )}
                                         </span>
                                         <span className="text-foreground font-semibold">
-                                          {issue.path}{issue.line ? `:L${issue.line}` : ""}
+                                          {issue.path}
+                                          {issue.line ? `:L${issue.line}` : ""}
                                         </span>
                                       </div>
                                       <span className="text-warning font-mono text-[11px]">
@@ -850,13 +885,13 @@ function RepoDetailContent() {
 
                                     {/* Diff Body */}
                                     {issue.suggestion ? (
-                                      <div className="overflow-x-auto p-5 font-mono text-xs leading-7 sm:text-[13px] bg-background">
+                                      <div className="bg-background overflow-x-auto p-5 font-mono text-xs leading-7 sm:text-[13px]">
                                         <pre className="text-foreground">
                                           <code>{issue.suggestion}</code>
                                         </pre>
                                       </div>
                                     ) : (
-                                      <div className="p-5 font-mono text-xs text-muted-foreground bg-background">
+                                      <div className="text-muted-foreground bg-background p-5 font-mono text-xs">
                                         {issue.body}
                                       </div>
                                     )}
@@ -864,23 +899,28 @@ function RepoDetailContent() {
                                     {/* Impact / Action Grid Footer */}
                                     <div className="border-border border-t">
                                       <div className="grid sm:grid-cols-[auto_1fr_auto]">
-                                        <div className="border-border text-warning border-b px-5 py-4 font-mono text-[11px] sm:border-r sm:border-b-0 flex items-center">
+                                        <div className="border-border text-warning flex items-center border-b px-5 py-4 font-mono text-[11px] sm:border-r sm:border-b-0">
                                           ISSUE
                                         </div>
 
-                                        <div className="px-5 py-4 font-mono text-xs flex items-center">
+                                        <div className="flex items-center px-5 py-4 font-mono text-xs">
                                           <p className="text-foreground text-xs leading-5">
                                             {issue.body.split("```")[0].trim()}
                                           </p>
                                         </div>
 
                                         {issue.suggestion && (
-                                          <div className="border-border border-t sm:border-t-0 sm:border-l p-3 flex items-center bg-muted/10">
+                                          <div className="border-border bg-muted/10 flex items-center border-t p-3 sm:border-t-0 sm:border-l">
                                             <button
                                               type="button"
-                                              onClick={() => handleFixIssue(pr, issue)}
-                                              disabled={isFixing || fixIssueMutation.isPending}
-                                              className="group border-foreground border bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 font-mono text-xs px-4 py-2.5 flex items-center gap-2 font-medium transition-colors cursor-pointer"
+                                              onClick={() =>
+                                                handleFixIssue(pr, issue)
+                                              }
+                                              disabled={
+                                                isFixing ||
+                                                fixIssueMutation.isPending
+                                              }
+                                              className="group border-foreground bg-foreground text-background hover:bg-foreground/90 flex cursor-pointer items-center gap-2 border px-4 py-2.5 font-mono text-xs font-medium transition-colors disabled:opacity-40"
                                             >
                                               {isFixing ? (
                                                 <>
@@ -889,8 +929,12 @@ function RepoDetailContent() {
                                                 </>
                                               ) : (
                                                 <>
-                                                  <span>Commit Fix to {pr.head.ref}</span>
-                                                  <span className="transition-transform group-hover:translate-x-1">→</span>
+                                                  <span>
+                                                    Commit Fix to {pr.head.ref}
+                                                  </span>
+                                                  <span className="transition-transform group-hover:translate-x-1">
+                                                    →
+                                                  </span>
                                                 </>
                                               )}
                                             </button>
@@ -900,9 +944,11 @@ function RepoDetailContent() {
                                     </div>
 
                                     {/* Technical Metadata Footer */}
-                                    <div className="border-border text-muted-foreground flex justify-between border-t px-4 py-2 font-mono text-[11px] bg-muted/10">
+                                    <div className="border-border text-muted-foreground bg-muted/10 flex justify-between border-t px-4 py-2 font-mono text-[11px]">
                                       <span>author: {issue.user}</span>
-                                      <span>commit will tag [patchmycode-autofix]</span>
+                                      <span>
+                                        commit will tag [patchmycode-autofix]
+                                      </span>
                                     </div>
                                   </div>
                                 );
@@ -910,8 +956,12 @@ function RepoDetailContent() {
                             </div>
                           </>
                         ) : (
-                          <div className="border border-border bg-background p-8 text-center font-mono text-xs text-muted-foreground">
-                            <span className="text-success font-semibold">✓ CLEAN REVIEW</span> — No AST or caller anomalies found in pull request #{pr.number}.
+                          <div className="border-border bg-background text-muted-foreground border p-8 text-center font-mono text-xs">
+                            <span className="text-success font-semibold">
+                              ✓ CLEAN REVIEW
+                            </span>{" "}
+                            — No AST or caller anomalies found in pull request #
+                            {pr.number}.
                           </div>
                         )}
                       </div>

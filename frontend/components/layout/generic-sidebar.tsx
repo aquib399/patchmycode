@@ -9,7 +9,6 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import Image from "next/image";
 import {
   X,
   Menu,
@@ -81,12 +80,11 @@ export function GenericSidebar({
     const state = getLinkState(link);
 
     return cn(
-      "flex items-center gap-2.5 px-3 py-2 text-xs font-mono transition-colors",
-      state === "active" &&
-        "bg-muted/40 text-foreground font-medium border-l-2 border-primary",
-      state === "ancestor" && "bg-muted/20 text-foreground font-medium",
+      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-300",
+      state === "active" && "bg-primary/10 text-primary font-medium",
+      state === "ancestor" && "bg-primary/5 text-primary/70 font-medium",
       state === "inactive" &&
-        "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
+        "text-muted-foreground hover:bg-muted hover:text-foreground"
     );
   };
 
@@ -301,7 +299,7 @@ export function GenericSidebar({
   return (
     <>
       {/* Mobile Top Header (< lg) */}
-      <header className="border-border bg-background flex h-14 max-h-14 min-h-14 shrink-0 items-center justify-between border-b px-4 lg:hidden">
+      <header className="border-border bg-card/80 flex h-14 max-h-14 min-h-14 shrink-0 items-center justify-between border-b px-4 backdrop-blur-md lg:hidden">
         <div className="flex items-center gap-2 overflow-hidden">
           <Button
             variant="ghost"
@@ -312,31 +310,23 @@ export function GenericSidebar({
             <Menu className="h-5 w-5" />
           </Button>
 
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/logo.png"
-              alt="PatchMyCode"
-              width={20}
-              height={20}
-              className="size-5 object-contain"
-            />
-            <span className="font-mono text-xs font-medium tracking-wider whitespace-nowrap">
-              PATCH MY CODE
-            </span>
-          </Link>
+          <TitleIcon className="text-primary h-6 w-6 shrink-0" />
+          <span className="text-foreground font-bold tracking-tight whitespace-nowrap">
+            {title}
+          </span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <PaletteSelector />
           <ToggleTheme />
         </div>
       </header>
 
-      {/* Mobile Drawer Overlay (< lg) */}
+      {/* Mobile Drawer Overlay (< lg) with Hardware-Accelerated Animation */}
       <AnimatePresence>
         {mobileOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            {/* Backdrop */}
+          <div className="fixed inset-0 z-5 lg:hidden">
+            {/* Backdrop Fade */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -346,30 +336,21 @@ export function GenericSidebar({
               onClick={() => setMobileOpen(false)}
             />
 
-            {/* Drawer Content */}
+            {/* Drawer Content Slide-In From Left */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-              className="border-border bg-background fixed inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r shadow-2xl"
+              className="border-border bg-card fixed inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r shadow-2xl"
             >
               <div className="border-border flex h-14 max-h-14 min-h-14 shrink-0 items-center justify-between border-b px-4">
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 overflow-hidden"
-                >
-                  <Image
-                    src="/logo.png"
-                    alt="PatchMyCode"
-                    width={20}
-                    height={20}
-                    className="size-5 object-contain"
-                  />
-                  <span className="font-mono text-xs font-medium tracking-wider whitespace-nowrap">
-                    PATCH MY CODE
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <TitleIcon className="text-primary h-6 w-6 shrink-0" />
+                  <span className="font-bold tracking-tight whitespace-nowrap">
+                    {title}
                   </span>
-                </Link>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -389,41 +370,31 @@ export function GenericSidebar({
       {/* Desktop Sidebar (lg: flex) */}
       <aside
         className={cn(
-          "border-border bg-background sticky top-0 hidden h-screen flex-col border-r transition-all duration-300 ease-in-out lg:flex",
-          collapsed ? "w-16" : "w-64"
+          "border-border bg-card/50 sticky top-0 hidden h-screen flex-col border-r backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex",
+          collapsed ? "w-20" : "w-72"
         )}
       >
         {/* Desktop Header */}
         <div className="border-border flex h-14 max-h-14 min-h-14 shrink-0 items-center justify-between border-b px-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 overflow-hidden transition-all duration-300"
-          >
-            <Image
-              src="/logo.png"
-              alt="PatchMyCode"
-              width={20}
-              height={20}
-              className="size-5 shrink-0 object-contain"
-            />
+          <div className="flex items-center gap-2 overflow-hidden transition-all duration-300">
+            <TitleIcon className="text-primary h-6 w-6 shrink-0" />
 
             <span
               className={cn(
-                "font-mono text-xs font-medium tracking-wider whitespace-nowrap transition-all duration-300",
+                "font-bold tracking-tight whitespace-nowrap transition-all duration-300",
                 collapsed
                   ? "max-w-0 overflow-hidden opacity-0"
-                  : "max-w-40 opacity-100"
+                  : "max-w-50 opacity-100"
               )}
             >
-              PATCH MY CODE
+              {title}
             </span>
-          </Link>
+          </div>
 
           {!collapsed && (
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground size-7"
               onClick={() => setCollapsed(true)}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -434,7 +405,7 @@ export function GenericSidebar({
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground size-7"
+              className="absolute top-4 right-2"
               onClick={() => setCollapsed(false)}
             >
               <ChevronRight className="h-4 w-4" />

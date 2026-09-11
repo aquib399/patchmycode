@@ -1,13 +1,14 @@
 "use client";
 
+import { RefreshCw, ExternalLink, ArrowUpRight, GitBranch } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense } from "react";
-import Link from "next/link";
 import { SearchBar } from "@/components/search-bar";
 import { useSearchParams } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import Loading from "@/components/loading";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   useUserRepositories,
   useToggleRepoStatus,
@@ -15,14 +16,6 @@ import {
   useLinkInstallation,
   useUserInstallations
 } from "@/hooks/api/github";
-import {
-  RefreshCw,
-  ExternalLink,
-  ArrowUpRight,
-  GitBranch,
-  CheckCircle2,
-  PauseCircle
-} from "lucide-react";
 import {
   GithubIcon,
   ConnectGithubButton
@@ -74,12 +67,10 @@ function DashboardContent() {
     if (installationId) {
       linkInstallationMutation.mutate(Number(installationId), {
         onSuccess: () => {
-          toast.success("GitHub App installed and repositories linked!");
           installationsQuery.refetch();
           window.history.replaceState({}, "", window.location.pathname);
         },
         onError: (err) => {
-          toast.error(err.message || "Failed to link GitHub installation");
           window.history.replaceState({}, "", window.location.pathname);
         }
       });
@@ -148,11 +139,7 @@ function DashboardContent() {
   };
 
   const handleSync = () => {
-    syncMutation.mutate(undefined, {
-      onSuccess: () => {
-        toast.success("Repositories synced with GitHub");
-      }
-    });
+    syncMutation.mutate();
   };
 
   if (installationsQuery.isLoading) {
@@ -370,7 +357,7 @@ function DashboardContent() {
             <p className="text-muted-foreground font-mono text-xs">
               01 / TOTAL REPOSITORIES
             </p>
-            <p className="mt-2 text-3xl font-medium tracking-tight sm:text-4xl font-mono">
+            <p className="mt-2 font-mono text-3xl font-medium tracking-tight sm:text-4xl">
               {stats.total}
             </p>
             <p className="text-muted-foreground mt-1 font-mono text-[11px]">
@@ -382,7 +369,7 @@ function DashboardContent() {
             <p className="text-muted-foreground font-mono text-xs">
               02 / REVIEW ACTIVE
             </p>
-            <p className="text-success mt-2 text-3xl font-medium tracking-tight sm:text-4xl font-mono">
+            <p className="text-success mt-2 font-mono text-3xl font-medium tracking-tight sm:text-4xl">
               {stats.active}
             </p>
             <p className="text-muted-foreground mt-1 font-mono text-[11px]">
@@ -394,7 +381,7 @@ function DashboardContent() {
             <p className="text-muted-foreground font-mono text-xs">
               03 / PAUSED
             </p>
-            <p className="text-muted-foreground mt-2 text-3xl font-medium tracking-tight sm:text-4xl font-mono">
+            <p className="text-muted-foreground mt-2 font-mono text-3xl font-medium tracking-tight sm:text-4xl">
               {stats.paused}
             </p>
             <p className="text-muted-foreground mt-1 font-mono text-[11px]">
@@ -407,12 +394,20 @@ function DashboardContent() {
       {/* 3. Controls Bar: Filter Pills & Search */}
       <section className="mx-auto max-w-7xl px-6 pt-8 pb-4 lg:px-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          {/* Search */}
+          <div className="w-full">
+            <SearchBar
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              searchPlaceholder="Filter repositories..."
+            />
+          </div>
           {/* Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-fit items-center gap-2">
             <button
               type="button"
               onClick={() => setFilterStatus("all")}
-              className={`border px-3.5 py-1.5 font-mono text-xs transition-colors cursor-pointer ${
+              className={`cursor-pointer border px-3.5 py-1.5 font-mono text-xs transition-colors ${
                 filterStatus === "all"
                   ? "border-foreground bg-foreground text-background font-medium"
                   : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -423,7 +418,7 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setFilterStatus("active")}
-              className={`border px-3.5 py-1.5 font-mono text-xs transition-colors cursor-pointer ${
+              className={`cursor-pointer border px-3.5 py-1.5 font-mono text-xs transition-colors ${
                 filterStatus === "active"
                   ? "border-foreground bg-foreground text-background font-medium"
                   : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -434,7 +429,7 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setFilterStatus("inactive")}
-              className={`border px-3.5 py-1.5 font-mono text-xs transition-colors cursor-pointer ${
+              className={`cursor-pointer border px-3.5 py-1.5 font-mono text-xs transition-colors ${
                 filterStatus === "inactive"
                   ? "border-foreground bg-foreground text-background font-medium"
                   : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -443,15 +438,6 @@ function DashboardContent() {
               PAUSED ({stats.paused})
             </button>
           </div>
-
-          {/* Search */}
-          <div className="w-full md:w-72">
-            <SearchBar
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              searchPlaceholder="Filter repositories..."
-            />
-          </div>
         </div>
       </section>
 
@@ -459,7 +445,7 @@ function DashboardContent() {
       <section className="mx-auto max-w-7xl px-6 pt-2 lg:px-8">
         <div className="border-border bg-muted/10 overflow-hidden border">
           {/* Table Header */}
-          <div className="border-border bg-muted/30 text-muted-foreground hidden grid-cols-[1.5fr_1fr_100px_120px_100px] items-center border-b px-6 py-3 font-mono text-xs tracking-wider uppercase md:grid">
+          <div className="border-border bg-muted/30 text-muted-foreground hidden grid-cols-[1.5fr_1fr_100px_120px_100px] items-center gap-4 border-b px-6 py-3 font-mono text-xs tracking-wider uppercase md:grid">
             <span>Repository</span>
             <span>Account</span>
             <span>Status</span>
@@ -477,7 +463,7 @@ function DashboardContent() {
                 <GitBranch className="text-muted-foreground size-5" />
               </div>
               <div>
-                <h3 className="text-sm font-medium font-mono">
+                <h3 className="font-mono text-sm font-medium">
                   {searchTerm
                     ? "No matching repositories"
                     : "No repositories found"}
@@ -540,7 +526,7 @@ function DashboardContent() {
                           <ExternalLink className="size-3 opacity-60 hover:opacity-100" />
                         </a>
 
-                        <span className="border-border text-muted-foreground border px-1.5 py-0.2 font-mono text-[10px]">
+                        <span className="border-border text-muted-foreground py-0.2 border px-1.5 font-mono text-[10px]">
                           {repo.private ? "PRIVATE" : "PUBLIC"}
                         </span>
                       </div>
@@ -560,12 +546,12 @@ function DashboardContent() {
                     {/* Status Pill */}
                     <div className="flex items-center font-mono text-xs">
                       {effectiveActive ? (
-                        <span className="text-success flex items-center gap-1.5">
-                          <span>+</span> ACTIVE
+                        <span className="text-primary flex items-center gap-1.5">
+                          ACTIVE
                         </span>
                       ) : (
-                        <span className="text-muted-foreground flex items-center gap-1.5">
-                          <span>−</span> PAUSED
+                        <span className="text-destructive flex items-center gap-1.5">
+                          PAUSED
                         </span>
                       )}
                     </div>
@@ -608,7 +594,7 @@ function DashboardContent() {
       </section>
 
       {/* 5. Minimalist Bottom Metadata */}
-      <footer className="border-border mx-auto mt-16 max-w-7xl border-t px-6 pt-8 lg:px-8">
+      <footer className="border-border mx-auto mt-16 max-w-7xl border-t p-6 pt-8 lg:px-8">
         <div className="text-muted-foreground flex flex-col items-center justify-between gap-4 font-mono text-xs sm:flex-row">
           <span>patchmycode · review engine</span>
           <span>automated pull-request analysis & caller tracing</span>

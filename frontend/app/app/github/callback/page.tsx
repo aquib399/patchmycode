@@ -25,11 +25,9 @@ function CallbackContent() {
     if (installationId) {
       linkInstallationMutation.mutate(Number(installationId), {
         onSuccess: () => {
-          toast.success("GitHub App installed successfully!");
           router.replace("/app");
         },
         onError: (err) => {
-          toast.error(err.message || "Failed to link GitHub App");
           router.replace("/app");
         }
       });
