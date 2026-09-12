@@ -19,7 +19,7 @@ const pipeline = [
   }
 ];
 
-const runCommand = (command, args) => {
+const runCommand = (command) => {
   return new Promise((resolve, reject) => {
     let dots = "";
     const interval = setInterval(() => {
@@ -46,7 +46,7 @@ async function build() {
       console.log(task.step);
       const start = performance.now();
 
-      await runCommand(task.command, task.args);
+      await runCommand(task.command);
 
       const duration = ((performance.now() - start) / 1000).toFixed(2);
       console.log(`${task.successMessage}: ${duration}s\n`);

@@ -570,7 +570,7 @@ function DashboardContent() {
                           onCheckedChange={() =>
                             handleToggleRepo(repo.repoId, effectiveActive)
                           }
-                          disabled={toggleStatusMutation.isPending}
+                          // disabled={toggleStatusMutation.isPending}
                         />
                       </div>
                     </div>

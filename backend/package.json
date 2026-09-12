@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
     "seed": "tsx script/seed.ts",
-    "build": "tsc && tsc-alias",
+    "build": "node build.js",
     "start": "node dist/src/server/index.js",
     "format": "prettier --write ."
   },

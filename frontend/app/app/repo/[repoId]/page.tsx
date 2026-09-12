@@ -122,8 +122,9 @@ function RepoDetailContent() {
     }
   };
 
-  const handleToggleRepoActive = (checked: boolean) => {
-    toggleStatusMutation.mutate({ repoId, isActive: checked }, {});
+  const handleToggleRepoActive = async (checked: boolean) => {
+    await toggleStatusMutation.mutateAsync({ repoId, isActive: checked }, {});
+    refetch();
   };
 
   const handleFixIssue = (pr: PullRequestItem, issue: PullRequestIssue) => {
