@@ -3,7 +3,7 @@ import { spawn } from "child_process";
 
 const pipeline = [
   {
-    step: "Injecting .env variables...",
+    step: "Injecting .env variables...",asdsadasd
     command: "npx tsx src/configs/env.ts",
     successMessage: "Injected .env"
   },
