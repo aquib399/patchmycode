@@ -2,7 +2,7 @@ import { performance } from "perf_hooks";
 import { spawn } from "child_process";
 
 const pipeline = [
-  s{
+  {
     step: "Injecting .env variables...",
     command: "npx tsx src/configs/env.ts",
     successMessage: "Injected .env"
